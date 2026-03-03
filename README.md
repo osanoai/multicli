@@ -1,5 +1,13 @@
 # Osano AI - Multi CLI MCP
 
+[![npm version](https://img.shields.io/npm/v/@osanoai/multicli?color=cb0000)](https://www.npmjs.com/package/@osanoai/multicli)
+[![Tests](https://img.shields.io/github/actions/workflow/status/osanoai/multicli/tests.yml?branch=main&label=tests)](https://github.com/osanoai/multicli/actions/workflows/tests.yml)
+[![Scan](https://img.shields.io/github/actions/workflow/status/osanoai/multicli/scan.yml?branch=main&label=security%20scan)](https://github.com/osanoai/multicli/actions/workflows/scan.yml)
+[![GitHub release](https://img.shields.io/github/v/release/osanoai/multicli)](https://github.com/osanoai/multicli/releases/latest)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/osanoai/multicli/badge)](https://scorecard.dev/viewer/?uri=github.com/osanoai/multicli)
+[![Node](https://img.shields.io/node/v/@osanoai/multicli)](https://www.npmjs.com/package/@osanoai/multicli)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
 **The AI collab no one asked for, but everyone needed.**
 
 An MCP server that lets Claude, Gemini, and Codex call each other as tools. Because why argue about which AI is best when you can make them work together?

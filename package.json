@@ -1,7 +1,7 @@
 {
   "name": "@osanoai/multicli",
   "version": "1.5.2",
-  "description": "MCP server for multi-CLI coding agent integration (Claude + Gemini + Codex)",
+  "description": "MCP server for Multiple CLI coding agent integration (Claude + Gemini + Codex)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
