@@ -66,6 +66,7 @@ Respond with ONLY valid JSON matching this exact schema — no markdown, no expl
 }
 
 Rules:
+- ONLY include ${provider}'s own models — do NOT include models from other providers
 - Only include models currently available in this CLI
 - Classify: smallest/fastest models → "fast", mid-range → "balanced", largest/most capable → "powerful"
 - The "id" must be the exact string a user passes to the --model or -m flag
@@ -76,22 +77,26 @@ Rules:
 
 interface CLIConfig {
   name: string;
+  expectedPrefix: string;
   buildCommand: (prompt: string) => string;
 }
 
 const CLI_CONFIGS: CLIConfig[] = [
   {
     name: 'claude',
+    expectedPrefix: 'claude-',
     buildCommand: (prompt) =>
       `claude --print --output-format text --model claude-haiku-4-5-20251001 ${shellQuote(prompt)}`,
   },
   {
     name: 'gemini',
+    expectedPrefix: 'gemini-',
     buildCommand: (prompt) =>
       `gemini -m gemini-2.5-flash -p ${shellQuote(prompt)}`,
   },
   {
     name: 'codex',
+    expectedPrefix: 'gpt-',
     buildCommand: (prompt) =>
       `codex exec --full-auto --skip-git-repo-check --color never -m gpt-5.1-codex-mini ${shellQuote(prompt)}`,
   },
@@ -169,7 +174,16 @@ function queryCLI(config: CLIConfig): ModelEntry[] | null {
       timeout: 120_000, // 2 minute timeout
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    return validateResponse(stdout, config.name);
+    const models = validateResponse(stdout, config.name);
+    if (!models) return null;
+
+    // Filter out models that don't match the expected provider prefix
+    const filtered = models.filter((m) => m.id.startsWith(config.expectedPrefix));
+    const dropped = models.length - filtered.length;
+    if (dropped > 0) {
+      console.warn(`  ⚠ ${config.name}: dropped ${dropped} model(s) not matching prefix "${config.expectedPrefix}"`);
+    }
+    return filtered.length > 0 ? filtered : null;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`  ✗ ${config.name}: CLI invocation failed — ${message}`);

@@ -43,7 +43,9 @@ Multi-CLI sits between your AI clients and bridges them via the [Model Context P
 
 This tool was built by the very AIs it connects.
 
-Claude, Gemini, and Codex wrote the code. Claude, Gemini, and Codex maintain it. Every week, all three AIs run a scheduled job that queries each CLI for its current model list, diffs the results against what's in the repo, and opens a PR if anything changed. New model releases get picked up automatically. Deprecated models get cleaned out. The repo stays current without anyone touching it.
+Claude, Gemini, and Codex wrote the code. Claude, Gemini, and Codex maintain it. Every night, a CI job queries the latest stable release of each CLI for its current model list, diffs the results against what's in the repo, and automatically publishes a new version if anything changed. New model releases get picked up within 24 hours. Deprecated models get cleaned out. The repo stays current without anyone touching it.
+
+Because all install commands use `@latest`, your MCP client pulls the newest version every time it starts — no manual updates, no stale model lists, no maintenance.
 
 Most MCP tools go stale within weeks. This one is self-maintaining by design.
 

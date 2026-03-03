@@ -114,18 +114,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install CLIs for catalog refresh
-        run: npm install -g @anthropic-ai/claude-code @google/gemini-cli codex
-        continue-on-error: true
-
-      - name: Refresh model catalog
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: npx tsx scripts/refresh-catalog.ts
-        continue-on-error: true
-
       - name: Auto-create patch changeset if none exists
         run: |
           COUNT=$(find .changeset -name "*.md" ! -name "README.md" 2>/dev/null | wc -l | tr -d ' ')

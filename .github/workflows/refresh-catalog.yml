@@ -2,7 +2,7 @@ name: Refresh Model Catalog
 
 on:
   schedule:
-    - cron: '0 9 * * 1' # Every Monday at 9:00 UTC
+    - cron: '0 9 * * *' # Every day at 9:00 UTC
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -12,7 +12,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v6
 
@@ -59,19 +58,11 @@ jobs:
             echo 'Refresh model catalog with latest available models from CLIs'
           } > .changeset/auto-catalog-refresh.md
 
-      - name: Create pull request
+      - name: Commit to main
         if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: 'chore: refresh model catalog'
-          title: 'chore: refresh model catalog'
-          body: |
-            Automated weekly refresh of the model catalog.
-
-            The CLIs were queried for their current available models and
-            `src/modelCatalog.generated.json` has been updated.
-
-            Please review the changes to ensure the model list looks correct.
-          branch: chore/refresh-model-catalog
-          delete-branch: true
-          labels: automated
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/modelCatalog.generated.json .changeset/auto-catalog-refresh.md
+          git commit -m "chore: refresh model catalog"
+          git push
