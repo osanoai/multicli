@@ -38,12 +38,8 @@ logs/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 
-# Local settings (keep these ignored)
-.claude/settings.local.json
-.gemini/settings.local.json
-tests/.claude/settings.local.json
-
 # Agents
 .claude
 .gemini
 .codex
+tasks/
