@@ -1,0 +1,133 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap');
+    </style>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="multiply" result="grain"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.05"/>
+      </feComponentTransfer>
+    </filter>
+    <radialGradient id="bgGlow" cx="50%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#C97B5F" stop-opacity="0.07"/>
+      <stop offset="50%" stop-color="#3C3082" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#F9F8FB" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C97B5F"/>
+      <stop offset="100%" stop-color="#3C3082"/>
+    </linearGradient>
+    <!-- Osano AI logo gradients (from original SVG) -->
+    <linearGradient id="logoGrad1" x1="0" y1="0" x2="1" y2="0"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(-18.76882,18.040719,-18.040719,-18.76882,109.73655,146.92637)"
+       spreadMethod="pad">
+      <stop offset="0" stop-color="#c97b5f" stop-opacity="1"/>
+      <stop offset="1" stop-color="#3c3082" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="logoGrad2" x1="0" y1="0" x2="1" y2="0"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(-15.117997,20.696296,-20.696296,-15.117997,112.98899,137.69514)"
+       spreadMethod="pad">
+      <stop offset="0" stop-color="#3c3082" stop-opacity="1"/>
+      <stop offset="1" stop-color="#c97b5f" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#F9F8FB"/>
+  <rect width="1280" height="640" fill="url(#bgGlow)"/>
+  <rect width="1280" height="640" filter="url(#grain)" opacity="0.3"/>
+
+  <!-- Top/bottom gradient bars -->
+  <rect x="0" y="0" width="1280" height="4" fill="url(#accentGrad)"/>
+  <rect x="0" y="636" width="1280" height="4" fill="url(#accentGrad)"/>
+
+  <!-- Subtle decorative circles -->
+  <circle cx="1150" cy="90" r="150" fill="#C97B5F" opacity="0.03"/>
+  <circle cx="130" cy="550" r="130" fill="#3C3082" opacity="0.03"/>
+
+  <!-- ===== OSANO AI LOGO (centered, above title) ===== -->
+  <g transform="translate(640, 120) scale(2.8) translate(-20, -20)">
+    <g transform="translate(-82.915541, -132.197642)">
+      <path d="m 86.333571,146.72323 c -0.56867,1.72261 -0.88053,3.56164 -0.88053,5.4744 v 0 c 0,9.64459 7.81791,17.46251 17.462499,17.46251 v 0 c 7.73112,0 14.28468,-5.02603 16.58196,-11.98775 v 0 c -5.78414,8.04263 -22.808489,6.5405 -24.221359,-3.38772 v 0 c -0.18098,-0.66499 -0.27976,-1.3642 -0.27976,-2.08704 v 0 c 0,-4.37338 3.54542,-7.91915 7.919159,-7.91915 v 0 c 3.6509,0 6.72288,2.47191 7.63905,5.83247 v 0 c -0.80222,-5.63633 -6.63681,-8.55698 -12.588519,-8.55733 v 0 c -4.53249,-3.5e-4 -9.13236,1.69263 -11.6325,5.16961"
+         fill="url(#logoGrad1)"/>
+      <path d="m 86.333571,146.72323 c 5.78379,-8.04228 22.807789,-6.5405 24.221019,3.38772 v 0 c 0.18133,0.66499 0.2801,1.36419 0.2801,2.08668 v 0 c 0,4.37374 -3.54577,7.91951 -7.91915,7.91951 v 0 c -3.651249,0 -6.723589,-2.47191 -7.639399,-5.83247 v 0 c 1.41287,9.92822 18.437219,11.43035 24.221359,3.38772 v 0 c 0.56833,-1.72261 0.88054,-3.56129 0.88054,-5.47476 v 0 c 0,-9.64388 -7.81862,-17.4625 -17.4625,-17.4625 v 0 c -7.731479,0 -14.285029,5.02638 -16.581969,11.9881"
+         fill="url(#logoGrad2)"/>
+    </g>
+  </g>
+
+  <!-- ===== TITLE: Osano [AI] — Multi CLI (centered as a group) ===== -->
+  <!-- Total width approx: Osano(~195) + gap(10) + AI badge(56) + gap(18) + dash(30) + gap(18) + MultiCLI(~210) = ~537 -->
+  <!-- Center offset: (1280-537)/2 = ~372 start x -->
+  <g transform="translate(352, 0)">
+    <!-- "Osano" -->
+    <text x="0" y="300" text-anchor="start" font-family="'Plus Jakarta Sans', sans-serif" font-size="56" font-weight="700" fill="#2D2D2D" letter-spacing="-0.02em">Osano</text>
+
+    <!-- AI badge (after Osano ~195px wide + 10px gap) -->
+    <g transform="translate(205, 268)">
+      <rect x="0" y="0" width="56" height="34" rx="5" fill="#C97B5F"/>
+      <text x="28" y="24" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="20" font-weight="600" fill="#FFFFFF">AI</text>
+    </g>
+
+    <!-- Em dash (after badge: 205+56+18 = 279) -->
+    <text x="294" y="300" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="44" font-weight="300" fill="#9C9690">—</text>
+
+    <!-- "Multi CLI" (after dash: ~310) -->
+    <text x="327" y="300" text-anchor="start" font-family="'Plus Jakarta Sans', sans-serif" font-size="44" font-weight="600" fill="#2D2D2D" letter-spacing="-0.01em">Multi CLI</text>
+  </g>
+
+  <!-- ===== SLOGAN ===== -->
+  <text x="640" y="358" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="20" font-weight="500" fill="#5C5A65">Any agent can now use Claude, Gemini, and Codex.</text>
+  <text x="640" y="388" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="22" font-weight="700" fill="#C97B5F" letter-spacing="0.02em">It just works.</text>
+
+  <!-- ===== AI BRAND ICONS ROW ===== -->
+  <!-- Claude mark (simplified Anthropic sparkle/star — 4-point star) -->
+  <g transform="translate(430, 440)">
+    <g transform="scale(0.9)">
+      <path d="M16 0 C18 10, 22 14, 32 16 C22 18, 18 22, 16 32 C14 22, 10 18, 0 16 C10 14, 14 10, 16 0Z" fill="#2D2D2D" opacity="0.7"/>
+    </g>
+    <text x="14" y="48" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="500" fill="#5C5A65">Claude</text>
+  </g>
+
+  <!-- Separator dot -->
+  <circle cx="545" cy="453" r="2.5" fill="#9C9690" opacity="0.5"/>
+
+  <!-- Gemini mark (simplified two-tone star — overlapping circles/abstract) -->
+  <g transform="translate(606, 436)">
+    <g transform="scale(0.85)">
+      <!-- Simplified Gemini sparkle: a faceted star shape -->
+      <path d="M16 0 C17 7, 12 12, 16 16 C20 12, 25 7, 32 16 C25 25, 20 20, 16 16 C12 20, 7 25, 0 16 C7 7, 12 12, 16 16 Z" fill="none"/>
+      <!-- Cleaner: two overlapping rounded shapes suggesting duality -->
+      <circle cx="12" cy="16" r="11" fill="none" stroke="#2D2D2D" stroke-width="2" opacity="0.6"/>
+      <circle cx="22" cy="16" r="11" fill="none" stroke="#2D2D2D" stroke-width="2" opacity="0.6"/>
+    </g>
+    <text x="14" y="50" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="500" fill="#5C5A65">Gemini</text>
+  </g>
+
+  <!-- Separator dot -->
+  <circle cx="720" cy="453" r="2.5" fill="#9C9690" opacity="0.5"/>
+
+  <!-- OpenAI/Codex mark (simplified hexagonal knot) -->
+  <g transform="translate(785, 436)">
+    <g transform="translate(14, 16) scale(0.8)">
+      <!-- Simplified OpenAI hexagonal knot — six petal arcs -->
+      <path d="M0,-13 A7,7 0 0,1 11.26,6.5 M11.26,6.5 A7,7 0 0,1 0,13 M0,13 A7,7 0 0,1 -11.26,6.5 M-11.26,6.5 A7,7 0 0,1 -11.26,-6.5 M-11.26,-6.5 A7,7 0 0,1 0,-13 M0,-13 A7,7 0 0,1 11.26,-6.5" fill="none" stroke="#2D2D2D" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+      <!-- Inner connecting lines -->
+      <line x1="0" y1="-13" x2="0" y2="-5" stroke="#2D2D2D" stroke-width="1.5" opacity="0.5"/>
+      <line x1="11.26" y1="6.5" x2="4.33" y2="2.5" stroke="#2D2D2D" stroke-width="1.5" opacity="0.5"/>
+      <line x1="-11.26" y1="6.5" x2="-4.33" y2="2.5" stroke="#2D2D2D" stroke-width="1.5" opacity="0.5"/>
+    </g>
+    <text x="14" y="50" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="500" fill="#5C5A65">Codex</text>
+  </g>
+
+  <!-- ===== BY OSANO TAGLINE ===== -->
+  <!-- Full string "by Osano, the data privacy company." centered at 640 -->
+  <!-- Total width ~260px, so start at ~510 -->
+  <text x="510" y="565" text-anchor="start" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="500" fill="#5C5A65" letter-spacing="0.01em">by</text>
+  <text x="528" y="565" text-anchor="start" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="700" fill="#3C3082" letter-spacing="0.01em">Osano</text>
+  <text x="574" y="565" text-anchor="start" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="500" fill="#5C5A65" letter-spacing="0.01em">, the data privacy company.</text>
+</svg>

@@ -15,18 +15,17 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit",
-    "contribute": "tsx src/contribute.ts",
-    "prepublishOnly": "echo '⚠️  Remember to test locally first!' && npm run build",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "prepublishOnly": "echo '⚠️  Remember to test locally first!' && npm run build"
   },
   "keywords": [
     "mcp",
     "modelcontextprotocol",
     "gemini",
+    "codex",
+    "claude",
     "cli",
-    "ai",
+    "coding",
+    "agent",
     "llm"
   ],
   "author": "arlogilbert",
