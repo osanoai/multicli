@@ -13,20 +13,54 @@ jobs:
     name: Check if release needed
     runs-on: ubuntu-latest
     outputs:
-      should_release: ${{ steps.check.outputs.should_release }}
+      should_release: ${{ steps.decide.outputs.should_release }}
     steps:
-      - name: Skip automated version commits
-        id: check
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check for automated version commit
+        id: commit
         run: |
           COMMIT_MSG=$(cat << 'HEREDOC'
           ${{ github.event.head_commit.message }}
           HEREDOC
           )
           if echo "$COMMIT_MSG" | head -1 | grep -q "^chore: version packages"; then
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "Skipping: automated version bump commit"
+            echo "skip=true" >> $GITHUB_OUTPUT
           else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for publishable changes
+        id: files
+        if: steps.commit.outputs.skip == 'false'
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- \
+            'src/**' \
+            'package.json' \
+            'package-lock.json' \
+            'tsconfig.json' \
+            '.changeset/**' \
+          )
+          if [ -n "$CHANGED" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Publishable files changed:"
+            echo "$CHANGED"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No publishable files changed — skipping release"
+          fi
+
+      - name: Decide
+        id: decide
+        run: |
+          if [ "${{ steps.commit.outputs.skip }}" = "true" ]; then
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.files.outputs.has_changes }}" = "true" ]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
           fi
 
   scan:
