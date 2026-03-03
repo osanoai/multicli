@@ -52,14 +52,6 @@ server.oninitialized = () => {
 
 let isProcessing = false; let currentOperationName = ""; let latestOutput = "";
 
-async function sendNotification(method: string, params: any) {
-  try {
-    await server.notification({ method, params });
-  } catch {
-    // notification errors are non-critical
-  }
-}
-
 /**
  * @param progressToken The progress token provided by the client
  * @param progress The current progress value

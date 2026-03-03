@@ -41,7 +41,7 @@ export function chunkChangeModeEdits(
   let currentChunk: ChangeModeEdit[] = [];
   let currentSize = 0;
   
-  for (const [filename, fileEdits] of fileGroups) {
+  for (const [, fileEdits] of fileGroups) {
     const fileSize = fileEdits.reduce((sum, edit) => sum + estimateEditSize(edit), 0);
     if (fileSize > maxCharsPerChunk) {
       if (currentChunk.length > 0) {

@@ -89,9 +89,9 @@ export function getPromptMessage(toolName: string, args: Record<string, any>): s
 
   Object.entries(args).forEach(([key, value]) => {
     if (key !== 'prompt' && value !== undefined && value !== null && value !== false) {
-      if (typeof value === 'boolean' && value) {
+      if (typeof value === 'boolean') {
         paramStrings.push(`[${key}]`);
-      } else if (typeof value !== 'boolean') {
+      } else {
         paramStrings.push(`(${key}: ${value})`);
       }
     }
