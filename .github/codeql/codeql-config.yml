@@ -1,0 +1,11 @@
+name: "Osano CodeQL Config"
+
+paths-ignore:
+  - '**/test/**'
+  - '**/tests/**'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+  - 'e2e/**'
+  - '**/node_modules/**'

@@ -10,3 +10,11 @@
 ## Review
 - Date: 2026-03-03
 - Outcome: Report written to `security_best_practices_report.md`
+
+# CI/CD & Testing Plan Review (multicli)
+
+- [ ] Gather repo context from `package.json`, `tsconfig.json`, `.github/workflows/scan.yml`, and `src/`
+- [ ] Compare proposed CI/CD workflows against repo constraints and identify risks/gaps
+- [ ] Evaluate trusted publishing details (OIDC, provenance, permissions, release triggers)
+- [ ] Review test plan coverage vs. code structure and identify blind spots
+- [ ] Summarize findings and concrete improvements

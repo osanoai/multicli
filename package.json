@@ -63,5 +63,11 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "overrides": {
+    "vitepress": {
+      "vite": "^5.4.21"
+    },
+    "esbuild": "^0.25.0"
   }
 }
