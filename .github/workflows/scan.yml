@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Shai-Hulud 2.0 Detector
         uses: gensecaihq/Shai-Hulud-2.0-Detector@75b20a130d6c16aa1f973b27ea07d076c931acfc # v1
         with:
@@ -41,7 +41,7 @@ jobs:
           - language: javascript-typescript
             build-mode: none
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
