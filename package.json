@@ -18,7 +18,7 @@
     "prepublishOnly": "echo '⚠️  Remember to test locally first!' && npm run build",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "keywords": [
     "mcp",
