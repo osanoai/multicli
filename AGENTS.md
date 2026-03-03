@@ -4,7 +4,7 @@ This file provides guidance to Claude Code, Google Gemini, OpenAI Codex, and oth
 
 ## Project Overview
 
-Osano AI Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claude, Gemini, Codex) call each other as tools. Built with TypeScript and the `@modelcontextprotocol/sdk`. Runs over stdio transport. Published to npm as `multicli
+Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claude, Gemini, Codex) call each other as tools. Built with TypeScript and the `@modelcontextprotocol/sdk`. Runs over stdio transport. Published to npm as `multicli
 
 ## Workflow Orchestration
 

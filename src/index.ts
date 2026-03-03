@@ -33,7 +33,7 @@ import { filterToolsForClient, isToolBlockedForClient } from './clientFilter.js'
 
 const server = new Server(
   {
-    name: "Osano AI Multi-CLI",
+    name: "Multi-CLI",
     version: "1.5.0",
   },{
     capabilities: {

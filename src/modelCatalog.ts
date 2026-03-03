@@ -1,30 +1,36 @@
-export interface ModelFamily {
-  family: string;
-  description: string;
-  knownModels: string[];
-  recommended: string;
+export interface ModelTier {
+  tier: 'fast' | 'balanced' | 'powerful';
+  label: string;
+  models: string[];
+  useWhen: string;
 }
 
 export interface CLICatalog {
   cli: 'gemini' | 'codex' | 'claude';
-  families: ModelFamily[];
+  tiers: ModelTier[];
   note: string;
 }
 
 const GEMINI_CATALOG: CLICatalog = {
   cli: 'gemini',
-  families: [
+  tiers: [
     {
-      family: 'pro',
-      description: 'Deep thinking, highly capable. Best for complex analysis, reasoning, and large codebase understanding.',
-      knownModels: ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
-      recommended: 'gemini-3.1-pro-preview',
+      tier: 'fast',
+      label: 'Flash (DEFAULT)',
+      models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+      useWhen: 'Simple questions, math, lookups, summaries, short code, trivial tasks. USE THIS BY DEFAULT.',
     },
     {
-      family: 'flash',
-      description: 'Fast and capable. Good for quick tasks, summaries, and straightforward code generation. Not ideal for deep reasoning or nuanced opinions.',
-      knownModels: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
-      recommended: 'gemini-3-flash-preview',
+      tier: 'balanced',
+      label: 'Flash Preview',
+      models: ['gemini-3-flash-preview'],
+      useWhen: 'Moderate tasks needing newer capabilities but still fast. Multi-step but not deeply complex.',
+    },
+    {
+      tier: 'powerful',
+      label: 'Pro',
+      models: ['gemini-3.1-pro-preview', 'gemini-2.5-pro'],
+      useWhen: 'ONLY for: complex analysis, deep reasoning, large codebase understanding, nuanced opinions, architectural decisions.',
     },
   ],
   note: 'Run Gemini Help for the latest CLI options. Model IDs may change as Google releases new versions.',
@@ -32,18 +38,24 @@ const GEMINI_CATALOG: CLICatalog = {
 
 const CODEX_CATALOG: CLICatalog = {
   cli: 'codex',
-  families: [
+  tiers: [
     {
-      family: 'codex',
-      description: 'Coding specialist. Optimized for code generation, debugging, refactoring, and software engineering tasks.',
-      knownModels: ['gpt-5.3-codex', 'gpt-5.2-codex', 'gpt-5.1-codex-max', 'gpt-5.1-codex-mini'],
-      recommended: 'gpt-5.3-codex',
+      tier: 'fast',
+      label: 'Codex Mini (DEFAULT)',
+      models: ['gpt-5.1-codex-mini'],
+      useWhen: 'Simple questions, math, lookups, short code snippets, trivial tasks. USE THIS BY DEFAULT.',
     },
     {
-      family: 'gpt',
-      description: 'General thinking and chat. Strong at reasoning, planning, analysis, and non-coding tasks.',
-      knownModels: ['gpt-5.2'],
-      recommended: 'gpt-5.2',
+      tier: 'balanced',
+      label: 'Codex',
+      models: ['gpt-5.2-codex'],
+      useWhen: 'Moderate coding tasks, multi-file changes, debugging, code review.',
+    },
+    {
+      tier: 'powerful',
+      label: 'Codex Max / GPT',
+      models: ['gpt-5.3-codex', 'gpt-5.1-codex-max', 'gpt-5.2'],
+      useWhen: 'ONLY for: complex architecture, large refactors, deep reasoning, nuanced analysis, multi-step planning.',
     },
   ],
   note: 'Run Codex Help for the latest CLI options. Model IDs may change as OpenAI releases new versions.',
@@ -51,27 +63,27 @@ const CODEX_CATALOG: CLICatalog = {
 
 const CLAUDE_CATALOG: CLICatalog = {
   cli: 'claude',
-  families: [
+  tiers: [
     {
-      family: 'opus',
-      description: 'Most capable. Complex reasoning, nuanced analysis, and difficult multi-step tasks.',
-      knownModels: ['claude-opus-4-6'],
-      recommended: 'claude-opus-4-6',
+      tier: 'fast',
+      label: 'Haiku (DEFAULT)',
+      models: ['claude-haiku-4-5-20251001'],
+      useWhen: 'Simple questions, math, lookups, summaries, short code, trivial tasks. USE THIS BY DEFAULT.',
     },
     {
-      family: 'sonnet',
-      description: 'Balanced execution and research. Strong at code, analysis, and following detailed instructions.',
-      knownModels: ['claude-sonnet-4-6'],
-      recommended: 'claude-sonnet-4-6',
+      tier: 'balanced',
+      label: 'Sonnet',
+      models: ['claude-sonnet-4-6'],
+      useWhen: 'Moderate coding, analysis, multi-step tasks, following detailed instructions.',
     },
     {
-      family: 'haiku',
-      description: 'Fast and efficient. Best for simple, high-volume tasks where speed matters more than depth.',
-      knownModels: ['claude-haiku-4-5-20251001'],
-      recommended: 'claude-haiku-4-5-20251001',
+      tier: 'powerful',
+      label: 'Opus',
+      models: ['claude-opus-4-6'],
+      useWhen: 'ONLY for: complex reasoning, nuanced analysis, difficult multi-step tasks, architectural decisions.',
     },
   ],
-  note: 'Run Claude Help for the latest CLI options. Accepts aliases (opus, sonnet, haiku) or full model IDs.',
+  note: 'Run Claude Help for the latest CLI options.',
 };
 
 const CATALOGS: Record<string, CLICatalog> = {
@@ -84,15 +96,22 @@ export function getCatalog(cli: 'gemini' | 'codex' | 'claude'): CLICatalog {
   return CATALOGS[cli];
 }
 
+const SELECTION_RULE =
+  `MODEL SELECTION RULE: Always use the fastest (smallest) model that can handle the task. ` +
+  `Default to the "fast" tier. Only escalate when the task clearly requires more capability. ` +
+  `Simple questions, math, lookups, and trivial code do NOT need powerful models.\n`;
+
 export function formatCatalog(cli: 'gemini' | 'codex' | 'claude'): string {
   const catalog = CATALOGS[cli];
-  const lines: string[] = [`${catalog.cli.toUpperCase()} — Available Models\n`];
+  const lines: string[] = [
+    `${catalog.cli.toUpperCase()} — Available Models\n`,
+    SELECTION_RULE,
+  ];
 
-  for (const family of catalog.families) {
-    lines.push(`${family.family} family`);
-    lines.push(family.description);
-    lines.push(`  Recommended: ${family.recommended}`);
-    lines.push(`  Known IDs: ${family.knownModels.join(', ')}`);
+  for (const tier of catalog.tiers) {
+    lines.push(`[${tier.tier.toUpperCase()}] ${tier.label}`);
+    lines.push(`  Use when: ${tier.useWhen}`);
+    lines.push(`  Model IDs: ${tier.models.join(', ')}`);
     lines.push('');
   }
 

@@ -12,7 +12,7 @@ Codex:  "You're both wrong. Here's the fix."
 
 ## What It Does
 
-Osano AI Multi-CLI sits between your AI clients and bridges them via the [Model Context Protocol](https://modelcontextprotocol.io/). Install it once, and whichever AI you're talking to gains the ability to call the others.
+Multi-CLI sits between your AI clients and bridges them via the [Model Context Protocol](https://modelcontextprotocol.io/). Install it once, and whichever AI you're talking to gains the ability to call the others.
 
 - **Claude** can ask Gemini or Codex for help
 - **Gemini** can delegate to Claude or Codex
@@ -39,7 +39,7 @@ You need **Node.js >= 18** and at least **two** of these CLIs installed:
 ### Claude Code
 
 ```bash
-claude mcp add "Osano AI Multi-CLI" -- npx -y "Osano AI Multi-CLI"
+claude mcp add "Multi-CLI" -- npx -y "Multi-CLI"
 ```
 
 That's it. Restart Claude Code and Gemini + Codex tools appear automatically.
@@ -110,7 +110,7 @@ Where `mcp.json` contains:
 ```json
 {
   "mcpServers": {
-    "Osano AI Multi-CLI": {
+    "Multi-CLI": {
       "command": "npx",
       "args": ["-y", "multicli"]
     }
@@ -123,7 +123,7 @@ Where `mcp.json` contains:
 
 ### Any Other MCP Client
 
-Osano AI Multi-CLI uses standard stdio transport. If your client supports MCP, point it at:
+Multi-CLI uses standard stdio transport. If your client supports MCP, point it at:
 
 ```
 npx -y multicli
@@ -170,14 +170,14 @@ Or get a second opinion on anything:
 
 ```
 ┌─────────────┐     MCP (stdio)     ┌──────────────┐     CLI calls     ┌─────────────┐
-│  Your AI    │ ◄──────────────────► │ Osano AI Multi-CLI │ ───────────────► │ Other AIs   │
+│  Your AI    │ ◄──────────────────► │ Multi-CLI │ ───────────────► │ Other AIs   │
 │  Client     │                      │   server     │                   │ (CLI tools) │
 └─────────────┘                      └──────────────┘                   └─────────────┘
 
-1. Your AI client connects to Osano AI Multi-CLI via MCP
-2. Osano AI Multi-CLI detects which CLIs are installed on your system
+1. Your AI client connects to Multi-CLI via MCP
+2. Multi-CLI detects which CLIs are installed on your system
 3. It registers tools for the OTHER clients (hides tools for the calling client)
-4. When a tool is called, Osano AI Multi-CLI executes the corresponding CLI command
+4. When a tool is called, Multi-CLI executes the corresponding CLI command
 5. Results flow back through MCP to your AI client
 ```
 
@@ -190,7 +190,7 @@ which gemini && which codex && which claude
 ```
 
 **No tools showing up?**
-If only your own CLI is installed, Osano AI Multi-CLI hides it (no self-calls). Install a *different* CLI to enable cross-model collaboration.
+If only your own CLI is installed, Multi-CLI hides it (no self-calls). Install a *different* CLI to enable cross-model collaboration.
 
 **MCP server not responding?**
 1. Check that Node.js >= 18 is installed

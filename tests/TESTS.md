@@ -1,8 +1,8 @@
-# TESTS.md — Osano AI Multi-CLI Verification Suite
+# TESTS.md — Multi-CLI Verification Suite
 
 ## Purpose
 
-These tests verify that the **Osano AI Multi-CLI** MCP server behaves correctly: tools are registered, requests succeed, errors are graceful, and client-based filtering works. Tests target **application behavior**, not the quality of AI-generated responses.
+These tests verify that the **Multi-CLI** MCP server behaves correctly: tools are registered, requests succeed, errors are graceful, and client-based filtering works. Tests target **application behavior**, not the quality of AI-generated responses.
 
 ### Conventions
 
@@ -12,7 +12,7 @@ These tests verify that the **Osano AI Multi-CLI** MCP server behaves correctly:
 
 ### Who Runs These Tests
 
-Any AI agent connected to Osano AI Multi-CLI via MCP. The bootstrap section below lets the agent discover which backends are visible and set up variables used by every test.
+Any AI agent connected to Multi-CLI via MCP. The bootstrap section below lets the agent discover which backends are visible and set up variables used by every test.
 
 ---
 
@@ -34,7 +34,7 @@ Group tools by their name prefix. The three possible prefixes are:
 | `codex-` | Codex CLI |
 | `claude-` | Claude CLI |
 
-You should see tools from exactly **two** of these three prefixes. The missing prefix is your own backend (Osano AI Multi-CLI hides your own tools from you).
+You should see tools from exactly **two** of these three prefixes. The missing prefix is your own backend (Multi-CLI hides your own tools from you).
 
 ### Step 3 — Assign variables
 

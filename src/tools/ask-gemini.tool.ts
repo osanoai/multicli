@@ -7,7 +7,7 @@ import {
 } from '../constants.js';
 
 const askGeminiArgsSchema = z.object({
-  prompt: z.string().min(1).describe("The question or task for Gemini. REQUIRED — MUST be a non-empty string, empty strings will be rejected. Use @ syntax to include files (e.g., '@largefile.js explain what this does')."),
+  prompt: z.string().min(1).describe("The question or task for Gemini. REQUIRED — MUST be a non-empty string. Gemini has filesystem access — use @ syntax to reference files (e.g., '@src/index.ts review this'). Do NOT pre-read or inline file contents — just describe the task and reference files with @."),
   model: z.string().min(1).describe("REQUIRED — you MUST first call List Gemini Models, review the available model families and their strengths, then select the best model for your task's scope and complexity. It's the law. Empty strings will be rejected."),
   sandbox: z.boolean().default(false).describe("Optional. Do NOT set unless explicitly needed. Run in sandbox mode (-s flag) for safely testing code changes in an isolated environment. Defaults to false."),
   changeMode: z.boolean().default(false).describe("Optional. Do NOT set unless explicitly needed. Return structured edit suggestions instead of plain text. Defaults to false."),
@@ -17,7 +17,7 @@ const askGeminiArgsSchema = z.object({
 
 export const askGeminiTool: UnifiedTool = {
   name: "Ask Gemini",
-  description: "Ask Google Gemini a question or give it a task. You MUST call List Gemini Models first to review available models and select one appropriate for your task — it's the law. Passing an empty model string will fail. Do NOT set optional parameters unless you have a specific reason.",
+  description: "Ask Google Gemini a question or give it a task. Gemini has filesystem access via @ syntax — do NOT pre-gather context or inline file contents into the prompt. Just describe what you need and use @file references. You MUST call List Gemini Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason.",
   zodSchema: askGeminiArgsSchema,
   prompt: {
     description: "Execute 'gemini <prompt>' to get Gemini AI's response. Supports enhanced change mode for structured edit suggestions.",

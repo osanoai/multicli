@@ -4,7 +4,7 @@ import { executeClaudeCLI } from '../utils/claudeExecutor.js';
 import { ERROR_MESSAGES, STATUS_MESSAGES } from '../constants.js';
 
 const askClaudeArgsSchema = z.object({
-  prompt: z.string().min(1).describe("The question or task for Claude Code. REQUIRED — MUST be a non-empty string, empty strings will be rejected."),
+  prompt: z.string().min(1).describe("The question or task for Claude Code. REQUIRED — MUST be a non-empty string. Claude Code has FULL access to the filesystem and can read files itself. Do NOT pre-read or inline file contents — just describe the task and let Claude explore the codebase."),
   model: z.string().min(1).describe("REQUIRED — you MUST first call List Claude Models, review the available model families and their strengths, then select the best model for your task's scope and complexity. It's the law. Empty strings will be rejected."),
   permissionMode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'dontAsk', 'plan']).optional().describe("Optional. Do NOT set unless explicitly needed. Permission mode: 'default' (requires approval), 'acceptEdits' (auto-accepts file edits), 'bypassPermissions' (skips all checks — use with care), 'dontAsk', or 'plan'."),
   maxBudgetUsd: z.number().positive().optional().describe("Optional. Do NOT set unless explicitly needed. Maximum dollar amount to spend on API calls for this request."),
@@ -13,7 +13,7 @@ const askClaudeArgsSchema = z.object({
 
 export const askClaudeTool: UnifiedTool = {
   name: "Ask Claude",
-  description: "Ask Claude Code a question or give it a task. You MUST call List Claude Models first to review available models and select one appropriate for your task — it's the law. Passing an empty model string will fail. Do NOT set optional parameters unless you have a specific reason.",
+  description: "Ask Claude Code a question or give it a task. Claude Code has full filesystem access and will read files itself — do NOT pre-gather context or inline file contents into the prompt. Just describe what you need. You MUST call List Claude Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason.",
   zodSchema: askClaudeArgsSchema,
   prompt: {
     description: "Execute 'claude --print <prompt>' to get Claude Code's response.",
