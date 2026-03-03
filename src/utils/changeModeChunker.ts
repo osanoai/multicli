@@ -9,7 +9,8 @@ export interface EditChunk {
 }
 
 function estimateEditSize(edit: ChangeModeEdit): number {
-  const jsonOverhead = 250; const contentSize = edit.filename.length * 2 + edit.oldCode.length + edit.newCode.length;
+  const jsonOverhead = 250;
+  const contentSize = edit.filename.length * 2 + edit.oldCode.length + edit.newCode.length;
   return jsonOverhead + contentSize;
 }
 
@@ -106,7 +107,7 @@ export function summarizeChunking(chunks: EditChunk[]): string {
 # edits: ${totalEdits}
 # chunks: ${chunks.length}
 est chars: ${totalChars.toLocaleString()}
-mean size: ${Math.round(totalChars / chunks.length).toLocaleString()} chars
+mean size: ${chunks.length === 0 ? 0 : Math.round(totalChars / chunks.length).toLocaleString()} chars
 
 Chunks:
 ${chunks.map(chunk => 

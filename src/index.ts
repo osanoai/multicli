@@ -50,7 +50,9 @@ server.oninitialized = () => {
   connectedClientName = clientInfo?.name;
 };
 
-let isProcessing = false; let currentOperationName = ""; let latestOutput = "";
+let isProcessing = false;
+let currentOperationName = "";
+let latestOutput = "";
 
 /**
  * @param progressToken The progress token provided by the client
@@ -275,4 +277,8 @@ async function main() {
   await initTools();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-} main().catch(() => { process.exit(1); });
+}
+
+main().catch(() => {
+  process.exit(1);
+});
