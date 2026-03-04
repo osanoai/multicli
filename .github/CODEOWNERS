@@ -1,0 +1,5 @@
+# Default owners for everything in the repo
+* @osanoai/innovation
+
+# CI/CD workflows require explicit review
+.github/ @osanoai/innovation

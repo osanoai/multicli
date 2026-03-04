@@ -3,6 +3,20 @@ import { spawn } from "child_process";
 // Detect Windows platform for shell compatibility
 const isWindows = process.platform === "win32";
 
+/**
+ * Sanitize arguments for safe use with shell: true on Windows.
+ * Prevents command injection via cmd.exe metacharacters (&, |, >, <, ^, %).
+ */
+function sanitizeWindowsArgs(args: string[]): string[] {
+  if (!isWindows) return args;
+  return args.map(arg =>
+    arg
+      .replace(/"/g, '\\"')   // escape quotes to prevent quote breakout
+      .replace(/%/g, '%%')    // escape percent to prevent env var expansion
+      .replace(/[&|<>^]/g, c => `^${c}`) // caret-escape cmd.exe operators
+  );
+}
+
 export async function executeCommand(
   command: string,
   args: string[],
@@ -10,7 +24,8 @@ export async function executeCommand(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     // Use shell: true on Windows to properly execute .cmd files and resolve PATH
-    const childProcess = spawn(command, args, {
+    const safeArgs = sanitizeWindowsArgs(args);
+    const childProcess = spawn(command, safeArgs, {
       env: process.env,
       shell: isWindows,
       stdio: ["ignore", "pipe", "pipe"],

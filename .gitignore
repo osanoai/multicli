@@ -9,10 +9,12 @@ pnpm-debug.log*
 dist/
 *.tsbuildinfo
 
-# Environment variables
+# Environment variables and secrets
 .env
-.env.local
-.env.*.local
+.env.*
+.npmrc
+*.pem
+*.key
 
 # IDE / Editor
 .vscode/
