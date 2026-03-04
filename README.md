@@ -72,7 +72,7 @@ Prefer to install per-client yourself? Each command is one line.
 ### Claude Code
 
 ```bash
-claude mcp add Multi-CLI -- npx -y @osanoai/multicli@latest
+claude mcp add --scope user Multi-CLI -- npx -y @osanoai/multicli@latest
 ```
 
 <details>

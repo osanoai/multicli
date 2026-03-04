@@ -51,7 +51,7 @@ FAILED=()
 
 if $CLAUDE_FOUND; then
   echo -e "  ${CYAN}→ Installing for Claude Code...${RESET}"
-  if claude mcp add "$SERVER_NAME" -- npx -y "$PACKAGE" 2>/dev/null; then
+  if claude mcp add --scope user "$SERVER_NAME" -- npx -y "$PACKAGE" 2>/dev/null; then
     INSTALLED+=("Claude Code")
   else
     FAILED+=("Claude Code")
