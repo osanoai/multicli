@@ -4,17 +4,18 @@ import { spawn } from "child_process";
 const isWindows = process.platform === "win32";
 
 /**
- * Sanitize arguments for safe use with shell: true on Windows.
- * Prevents command injection via cmd.exe metacharacters (&, |, >, <, ^, %).
+ * Sanitize a single argument for safe use with cmd.exe (shell: true on Windows).
+ * Uses correct cmd.exe escaping conventions:
+ *   - `""` for literal double quotes (cmd.exe convention, not `\"`)
+ *   - `%%` for literal percent signs (prevents env variable expansion)
+ *   - `^` prefix for cmd.exe operators: & | < > ^
  */
-function sanitizeWindowsArgs(args: string[]): string[] {
-  if (!isWindows) return args;
-  return args.map(arg =>
-    arg
-      .replace(/"/g, '\\"')   // escape quotes to prevent quote breakout
-      .replace(/%/g, '%%')    // escape percent to prevent env var expansion
-      .replace(/[&|<>^]/g, c => `^${c}`) // caret-escape cmd.exe operators
-  );
+export function sanitizeArgForCmd(arg: string): string {
+  return arg
+    .replace(/"/g, '""')               // cmd.exe double-quote escaping
+    .replace(/%/g, '%%')               // prevent %VAR% expansion
+    .replace(/[&|<>^]/g, c => `^${c}`) // caret-escape shell operators
+  ;
 }
 
 export async function executeCommand(
@@ -23,8 +24,9 @@ export async function executeCommand(
   onProgress?: (newOutput: string) => void
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    // Use shell: true on Windows to properly execute .cmd files and resolve PATH
-    const safeArgs = sanitizeWindowsArgs(args);
+    // Use shell: true on Windows to properly execute .cmd files and resolve PATH.
+    // Sanitize args to prevent cmd.exe metacharacter injection.
+    const safeArgs = isWindows ? args.map(sanitizeArgForCmd) : args;
     const childProcess = spawn(command, safeArgs, {
       env: process.env,
       shell: isWindows,

@@ -6,7 +6,7 @@ vi.mock('child_process', () => ({
   spawn: vi.fn(),
 }));
 
-import { executeCommand } from '../../src/utils/commandExecutor.js';
+import { executeCommand, sanitizeArgForCmd } from '../../src/utils/commandExecutor.js';
 
 function createMockProcess() {
   const proc = {
@@ -114,5 +114,38 @@ describe('commandExecutor', () => {
     mock.emitClose(1);
 
     await expect(promise).rejects.toThrow('Failed to spawn command');
+  });
+});
+
+describe('sanitizeArgForCmd', () => {
+  it('passes through safe strings unchanged', () => {
+    expect(sanitizeArgForCmd('hello world')).toBe('hello world');
+    expect(sanitizeArgForCmd('-m model-name')).toBe('-m model-name');
+  });
+
+  it('escapes double quotes with cmd.exe convention ("")', () => {
+    expect(sanitizeArgForCmd('say "hello"')).toBe('say ""hello""');
+  });
+
+  it('escapes percent signs to prevent %VAR% expansion', () => {
+    expect(sanitizeArgForCmd('improve by 100%')).toBe('improve by 100%%');
+    expect(sanitizeArgForCmd('%PATH%')).toBe('%%PATH%%');
+  });
+
+  it('caret-escapes cmd.exe shell operators', () => {
+    expect(sanitizeArgForCmd('read & summarize')).toBe('read ^& summarize');
+    expect(sanitizeArgForCmd('a | b')).toBe('a ^| b');
+    expect(sanitizeArgForCmd('a > b')).toBe('a ^> b');
+    expect(sanitizeArgForCmd('a < b')).toBe('a ^< b');
+    expect(sanitizeArgForCmd('a ^ b')).toBe('a ^^ b');
+  });
+
+  it('handles combined metacharacters', () => {
+    expect(sanitizeArgForCmd('echo "hi" & del %TEMP%'))
+      .toBe('echo ""hi"" ^& del %%TEMP%%');
+  });
+
+  it('handles empty string', () => {
+    expect(sanitizeArgForCmd('')).toBe('');
   });
 });
