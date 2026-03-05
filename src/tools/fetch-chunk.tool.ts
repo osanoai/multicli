@@ -9,7 +9,7 @@ const inputSchema = z.object({
 });
 
 export const fetchChunkTool: UnifiedTool = {
-  name: 'Fetch Chunk',
+  name: 'Fetch-Chunk',
   description: 'Retrieves cached chunks from a Gemini changeMode response. Use this to get subsequent chunks after receiving a partial changeMode response.',
   
   zodSchema: inputSchema,
@@ -37,7 +37,7 @@ export const fetchChunkTool: UnifiedTool = {
       return `❌ Cache miss: No chunks found for cache key "${cacheKey}". 
 
   Possible reasons:
-  1. The cache key is incorrect, Have you ran Ask Gemini with changeMode enabled?
+  1. The cache key is incorrect, Have you ran Ask-Gemini with changeMode enabled?
   2. The cache has expired (10 minute TTL)
   3. The MCP server was restarted and the file-based cache was cleared
 

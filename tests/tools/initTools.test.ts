@@ -30,13 +30,13 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
-    expect(names).toContain('List Gemini Models');
-    expect(names).toContain('Ask Gemini');
-    expect(names).toContain('Fetch Chunk');
-    expect(names).toContain('Gemini Help');
+    expect(names).toContain('List-Gemini-Models');
+    expect(names).toContain('Ask-Gemini');
+    expect(names).toContain('Fetch-Chunk');
+    expect(names).toContain('Gemini-Help');
     // Should NOT have codex or claude tools
-    expect(names).not.toContain('Ask Codex');
-    expect(names).not.toContain('Ask Claude');
+    expect(names).not.toContain('Ask-Codex');
+    expect(names).not.toContain('Ask-Claude');
   });
 
   it('registers codex tools when codex available', async () => {
@@ -47,11 +47,11 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
-    expect(names).toContain('List Codex Models');
-    expect(names).toContain('Ask Codex');
-    expect(names).toContain('Codex Help');
-    expect(names).not.toContain('Ask Gemini');
-    expect(names).not.toContain('Ask Claude');
+    expect(names).toContain('List-Codex-Models');
+    expect(names).toContain('Ask-Codex');
+    expect(names).toContain('Codex-Help');
+    expect(names).not.toContain('Ask-Gemini');
+    expect(names).not.toContain('Ask-Claude');
   });
 
   it('registers claude tools when claude available', async () => {
@@ -62,11 +62,11 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
-    expect(names).toContain('List Claude Models');
-    expect(names).toContain('Ask Claude');
-    expect(names).toContain('Claude Help');
-    expect(names).not.toContain('Ask Gemini');
-    expect(names).not.toContain('Ask Codex');
+    expect(names).toContain('List-Claude-Models');
+    expect(names).toContain('Ask-Claude');
+    expect(names).toContain('Claude-Help');
+    expect(names).not.toContain('Ask-Gemini');
+    expect(names).not.toContain('Ask-Codex');
   });
 
   it('registers tools for multiple available CLIs', async () => {
@@ -77,9 +77,9 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
-    expect(names).toContain('Ask Gemini');
-    expect(names).toContain('Ask Codex');
-    expect(names).not.toContain('Ask Claude');
+    expect(names).toContain('Ask-Gemini');
+    expect(names).toContain('Ask-Codex');
+    expect(names).not.toContain('Ask-Claude');
   });
 
   it('registers no tools when no CLIs available', async () => {
