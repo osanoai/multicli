@@ -12,8 +12,11 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js 24
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
@@ -47,22 +50,29 @@ jobs:
             echo "Model catalog has changed"
           fi
 
-      - name: Create changeset
+      - name: Open PR with version bump
         if: steps.diff.outputs.changed == 'true'
-        run: |
-          {
-            echo '---'
-            echo '"@osanoai/multicli": patch'
-            echo '---'
-            echo ''
-            echo 'Refresh model catalog with latest available models from CLIs'
-          } > .changeset/auto-catalog-refresh.md
-
-      - name: Commit to main
-        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/modelCatalog.generated.json .changeset/auto-catalog-refresh.md
+
+          # Bump patch version in package.json and sync package-lock.json
+          npm version patch --no-git-tag-version
+          npm install --package-lock-only
+
+          # Create branch and commit
+          BRANCH="chore/catalog-refresh-$(date +%Y%m%d%H%M)"
+          git checkout -b "$BRANCH"
+          git add src/modelCatalog.generated.json package.json package-lock.json
           git commit -m "chore: refresh model catalog"
-          git push
+          git push origin "$BRANCH"
+
+          # Open PR and enable auto-merge (merges after required checks pass)
+          gh pr create \
+            --title "chore: refresh model catalog" \
+            --body "Automated nightly catalog refresh. AI model lists have changed." \
+            --base main \
+            --head "$BRANCH"
+          gh pr merge --auto --squash

@@ -14,51 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.decide.outputs.should_release }}
+      version: ${{ steps.decide.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 2
 
-      - name: Check for automated version commit
-        id: commit
-        run: |
-          COMMIT_MSG=$(git log -1 --format=%s)
-          if echo "$COMMIT_MSG" | grep -q "^chore: version packages"; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check for publishable changes
-        id: files
-        if: steps.commit.outputs.skip == 'false'
-        run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD -- \
-            'src/**' \
-            'package.json' \
-            'package-lock.json' \
-            'tsconfig.json' \
-            '.changeset/**' \
-            '.github/workflows/release.yml' \
-          )
-          if [ -n "$CHANGED" ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "Publishable files changed:"
-            echo "$CHANGED"
-          else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "No publishable files changed — skipping release"
-          fi
-
-      - name: Decide
+      - name: Check for version change
         id: decide
         run: |
-          if [ "${{ steps.commit.outputs.skip }}" = "true" ]; then
-            echo "should_release=false" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.files.outputs.has_changes }}" = "true" ]; then
+          OLD=$(git show HEAD~1:package.json 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/' || echo "")
+          NEW=$(grep '"version"' package.json | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+          if [ -n "$OLD" ] && [ "$OLD" != "$NEW" ]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "version=$NEW" >> $GITHUB_OUTPUT
+            echo "Version changed: $OLD -> $NEW"
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "No version change detected ($NEW)"
           fi
 
   scan:
@@ -77,7 +50,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
 
   release:
-    name: Version, Publish & Release
+    name: Publish & Release
     needs: [check, test]
     if: needs.check.outputs.should_release == 'true'
     runs-on: ubuntu-latest
@@ -85,11 +58,8 @@ jobs:
     permissions:
       contents: write
       id-token: write
-      pull-requests: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js 24
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
@@ -113,65 +83,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Auto-create patch changeset if none exists
-        run: |
-          COUNT=$(find .changeset -name "*.md" ! -name "README.md" 2>/dev/null | wc -l | tr -d ' ')
-          if [ "$COUNT" = "0" ]; then
-            echo "No changesets found — creating automatic patch bump"
-            {
-              echo '---'
-              echo '"@osanoai/multicli": patch'
-              echo '---'
-              echo ''
-              echo 'Automatic patch version bump'
-            } > .changeset/auto-ci-patch.md
-          fi
-
-      - name: Version packages
-        run: npx changeset version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check for version change
-        id: version
-        run: |
-          if git diff --quiet package.json; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No version change detected"
-          else
-            VERSION=$(node -p "require('./package.json').version")
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "New version: v$VERSION"
-          fi
-
-      - name: Commit and tag
-        if: steps.version.outputs.changed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore: version packages v${{ steps.version.outputs.version }} [skip ci]"
-          git tag "v${{ steps.version.outputs.version }}"
-          git push --follow-tags
-
-      - name: Rebuild with updated version
-        if: steps.version.outputs.changed == 'true'
+      - name: Build
         run: npm run build
 
       - name: Publish to npm with provenance
-        if: steps.version.outputs.changed == 'true'
         run: npm publish --provenance --access public
 
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ needs.check.outputs.version }}"
+          git push origin "v${{ needs.check.outputs.version }}"
+
       - name: Create GitHub Release
-        if: steps.version.outputs.changed == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `v${{ steps.version.outputs.version }}`,
-              name: `v${{ steps.version.outputs.version }}`,
+              tag_name: `v${{ needs.check.outputs.version }}`,
+              name: `v${{ needs.check.outputs.version }}`,
               generate_release_notes: true,
             });

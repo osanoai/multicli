@@ -1,6 +1,6 @@
 {
   "name": "@osanoai/multicli",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "description": "MCP server for Multiple CLI coding agent integration (Claude + Gemini + Codex)",
   "type": "module",
   "main": "dist/index.js",
@@ -17,8 +17,6 @@
     "lint": "tsc --noEmit",
     "prepublishOnly": "echo '⚠️  Remember to test locally first!' && npm run build",
     "refresh-catalog": "npx tsx scripts/refresh-catalog.ts",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
     "prepare": "husky || true"
   },
   "keywords": [
@@ -54,8 +52,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.6.0",
-    "@changesets/cli": "^2.30.0",
     "@types/node": "^25.3.3",
     "@vitest/coverage-v8": "^4.0.18",
     "husky": "^9.1.7",
