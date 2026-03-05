@@ -39,6 +39,7 @@ jobs:
             'package-lock.json' \
             'tsconfig.json' \
             '.changeset/**' \
+            '.github/workflows/release.yml' \
           )
           if [ -n "$CHANGED" ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
