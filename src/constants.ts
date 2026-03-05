@@ -43,7 +43,7 @@ export const PROTOCOL = {
     PROGRESS: "notifications/progress",
   },
   // Timeout prevention
-  KEEPALIVE_INTERVAL: 25000, // 25 seconds
+  KEEPALIVE_INTERVAL: 10000, // 10 seconds
 } as const;
 
 

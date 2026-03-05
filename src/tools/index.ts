@@ -19,26 +19,26 @@ export async function initTools(): Promise<CliAvailability> {
 
   if (availability.gemini) {
     toolRegistry.push(
-      geminiListModelsTool,   // List Gemini Models
-      askGeminiTool,          // Ask Gemini
-      fetchChunkTool,         // Fetch Chunk
-      geminiHelpTool,         // Gemini Help
+      geminiListModelsTool,   // List-Gemini-Models
+      askGeminiTool,          // Ask-Gemini
+      fetchChunkTool,         // Fetch-Chunk
+      geminiHelpTool,         // Gemini-Help
     );
   }
 
   if (availability.codex) {
     toolRegistry.push(
-      codexListModelsTool,    // List Codex Models
-      askCodexTool,           // Ask Codex
-      codexHelpTool,          // Codex Help
+      codexListModelsTool,    // List-Codex-Models
+      askCodexTool,           // Ask-Codex
+      codexHelpTool,          // Codex-Help
     );
   }
 
   if (availability.claude) {
     toolRegistry.push(
-      claudeListModelsTool,   // List Claude Models
-      askClaudeTool,          // Ask Claude
-      claudeHelpTool,         // Claude Help
+      claudeListModelsTool,   // List-Claude-Models
+      askClaudeTool,          // Ask-Claude
+      claudeHelpTool,         // Claude-Help
     );
   }
 

@@ -53,7 +53,7 @@ describe('registry', () => {
   describe('getToolDefinitions', () => {
     it('converts zod schema to MCP Tool format', () => {
       const tool = makeTool({
-        name: 'Ask Gemini',
+        name: 'Ask-Gemini',
         description: 'Ask Gemini a question',
         zodSchema: z.object({
           prompt: z.string().describe('The prompt'),
@@ -64,7 +64,7 @@ describe('registry', () => {
 
       const defs = getToolDefinitions();
       expect(defs).toHaveLength(1);
-      expect(defs[0].name).toBe('Ask Gemini');
+      expect(defs[0].name).toBe('Ask-Gemini');
       expect(defs[0].description).toBe('Ask Gemini a question');
       expect(defs[0].inputSchema.type).toBe('object');
       expect(defs[0].inputSchema.properties).toHaveProperty('prompt');
@@ -188,18 +188,18 @@ describe('registry', () => {
   describe('getPromptMessage', () => {
     it('formats message with prompt and parameters', () => {
       const tool = makeTool({
-        name: 'Ask Gemini',
+        name: 'Ask-Gemini',
         prompt: { description: 'Ask Gemini' },
       });
       toolRegistry.push(tool);
 
-      const msg = getPromptMessage('Ask Gemini', {
+      const msg = getPromptMessage('Ask-Gemini', {
         prompt: 'explain this',
         model: 'gemini-2.5-flash',
         sandbox: true,
       });
 
-      expect(msg).toContain('Use the Ask Gemini tool');
+      expect(msg).toContain('Use the Ask-Gemini tool');
       expect(msg).toContain('explain this');
       expect(msg).toContain('model: gemini-2.5-flash');
       expect(msg).toContain('[sandbox]');

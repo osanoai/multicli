@@ -68,7 +68,7 @@ const FALLBACK_CATALOGS: Record<string, CLICatalog> = {
           'ONLY for: complex analysis, deep reasoning, large codebase understanding, nuanced opinions, architectural decisions.',
       },
     ],
-    note: 'Run Gemini Help for the latest CLI options. Model IDs may change as Google releases new versions.',
+    note: 'Run Gemini-Help for the latest CLI options. Model IDs may change as Google releases new versions.',
   },
   codex: {
     cli: 'codex',
@@ -94,7 +94,7 @@ const FALLBACK_CATALOGS: Record<string, CLICatalog> = {
           'ONLY for: complex architecture, large refactors, deep reasoning, nuanced analysis, multi-step planning.',
       },
     ],
-    note: 'Run Codex Help for the latest CLI options. Model IDs may change as OpenAI releases new versions.',
+    note: 'Run Codex-Help for the latest CLI options. Model IDs may change as OpenAI releases new versions.',
   },
   claude: {
     cli: 'claude',
@@ -120,7 +120,7 @@ const FALLBACK_CATALOGS: Record<string, CLICatalog> = {
           'ONLY for: complex reasoning, nuanced analysis, difficult multi-step tasks, architectural decisions.',
       },
     ],
-    note: 'Run Claude Help for the latest CLI options.',
+    note: 'Run Claude-Help for the latest CLI options.',
   },
 };
 

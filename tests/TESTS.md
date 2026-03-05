@@ -52,7 +52,7 @@ For each visible backend, you should see three tools following this naming conve
 | `{prefix}list-models` | List available models |
 | `{prefix}help` | Show CLI help text |
 
-Gemini also exposes `Fetch Chunk` (4 tools total). Record which tools you see.
+Gemini also exposes `Fetch-Chunk` (4 tools total). Record which tools you see.
 
 ### Step 4 — Pick models
 
@@ -78,7 +78,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 **Steps**: Count tools grouped by each visible prefix.
 
-**Expected**: Each visible backend has at least 3 tools (`ask`, `list-models`, `help`). If Gemini is visible, it has 4 (adds `Fetch Chunk`).
+**Expected**: Each visible backend has at least 3 tools (`ask`, `list-models`, `help`). If Gemini is visible, it has 4 (adds `Fetch-Chunk`).
 
 **Pass if**: Counts match. **Fail if**: Any visible backend has fewer tools than expected.
 
@@ -264,7 +264,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.3 — Codex sandbox parameter (if Codex visible)
 
-**Steps**: If Codex is a visible backend, call `Ask Codex` with `{ "prompt": "Reply with exactly: SANDBOX_TEST", "model": "{Codex Model}", "sandbox": "read-only" }`.
+**Steps**: If Codex is a visible backend, call `Ask-Codex` with `{ "prompt": "Reply with exactly: SANDBOX_TEST", "model": "{Codex Model}", "sandbox": "read-only" }`.
 
 **Expected**: Response succeeds. Sandbox value is accepted as one of: `read-only`, `workspace-write`, `danger-full-access`.
 
@@ -273,7 +273,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.4 — Codex invalid sandbox value (if Codex visible)
 
-**Steps**: Call `Ask Codex` with `{ "prompt": "hello", "model": "{Codex Model}", "sandbox": "invalid-mode" }`.
+**Steps**: Call `Ask-Codex` with `{ "prompt": "hello", "model": "{Codex Model}", "sandbox": "invalid-mode" }`.
 
 **Expected**: Validation error — `sandbox` must be one of the allowed enum values.
 
@@ -282,7 +282,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.5 — Claude permission mode (if Claude visible)
 
-**Steps**: If Claude is a visible backend, call `Ask Claude` with `{ "prompt": "Reply with exactly: PERM_TEST", "model": "{Claude Model}", "permissionMode": "plan" }`.
+**Steps**: If Claude is a visible backend, call `Ask-Claude` with `{ "prompt": "Reply with exactly: PERM_TEST", "model": "{Claude Model}", "permissionMode": "plan" }`.
 
 **Expected**: Response succeeds. `permissionMode` is accepted as one of: `default`, `acceptEdits`, `bypassPermissions`, `dontAsk`, `plan`.
 
@@ -291,7 +291,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.6 — Claude invalid permission mode (if Claude visible)
 
-**Steps**: Call `Ask Claude` with `{ "prompt": "hello", "model": "{Claude Model}", "permissionMode": "nope" }`.
+**Steps**: Call `Ask-Claude` with `{ "prompt": "hello", "model": "{Claude Model}", "permissionMode": "nope" }`.
 
 **Expected**: Validation error — `permissionMode` must be one of the allowed enum values.
 
@@ -300,7 +300,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.7 — Claude system prompt (if Claude visible)
 
-**Steps**: Call `Ask Claude` with `{ "prompt": "What is your system prompt?", "model": "{Claude Model}", "systemPrompt": "You are a test bot. Always reply TEST_SYSTEM." }`.
+**Steps**: Call `Ask-Claude` with `{ "prompt": "What is your system prompt?", "model": "{Claude Model}", "systemPrompt": "You are a test bot. Always reply TEST_SYSTEM." }`.
 
 **Expected**: Response succeeds and the system prompt parameter is accepted.
 
@@ -309,7 +309,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.8 — Gemini sandbox flag (if Gemini visible)
 
-**Steps**: If Gemini is a visible backend, call `Ask Gemini` with `{ "prompt": "Reply with exactly: SANDBOX_GEM", "model": "{Gemini Model}", "sandbox": true }`.
+**Steps**: If Gemini is a visible backend, call `Ask-Gemini` with `{ "prompt": "Reply with exactly: SANDBOX_GEM", "model": "{Gemini Model}", "sandbox": true }`.
 
 **Expected**: Response succeeds. The `sandbox` parameter is a boolean for Gemini (not an enum).
 
@@ -318,7 +318,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 5.9 — Gemini sandbox wrong type (if Gemini visible)
 
-**Steps**: Call `Ask Gemini` with `{ "prompt": "hello", "model": "{Gemini Model}", "sandbox": "true" }`.
+**Steps**: Call `Ask-Gemini` with `{ "prompt": "hello", "model": "{Gemini Model}", "sandbox": "true" }`.
 
 **Expected**: Validation error — Gemini's `sandbox` field expects a boolean, not a string.
 
@@ -334,7 +334,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 6.1 — ChangeMode flag accepted
 
-**Steps**: Call `Ask Gemini` with `{ "prompt": "Suggest a one-line comment addition to a Python hello world script", "model": "{Gemini Model}", "changeMode": true }`.
+**Steps**: Call `Ask-Gemini` with `{ "prompt": "Suggest a one-line comment addition to a Python hello world script", "model": "{Gemini Model}", "changeMode": true }`.
 
 **Expected**: Response succeeds. Output should contain structured edit information or a changeMode-formatted response. If the response is large enough to be chunked, a `cacheKey` and `chunkIndex` will appear in the response text.
 
@@ -342,7 +342,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 6.2 — ChangeMode with chunkIndex
 
-**Steps**: Call `Ask Gemini` with `{ "prompt": "Write a 500-line Python program with detailed comments on every line", "model": "{Gemini Model}", "changeMode": true, "chunkIndex": 1 }`.
+**Steps**: Call `Ask-Gemini` with `{ "prompt": "Write a 500-line Python program with detailed comments on every line", "model": "{Gemini Model}", "changeMode": true, "chunkIndex": 1 }`.
 
 **Expected**: Response succeeds. The `chunkIndex` parameter (1-based) is accepted alongside `changeMode`.
 
@@ -350,7 +350,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 6.3 — ChangeMode defaults to false
 
-**Steps**: Call `Ask Gemini` with `{ "prompt": "Say hello", "model": "{Gemini Model}" }` (no `changeMode` field).
+**Steps**: Call `Ask-Gemini` with `{ "prompt": "Say hello", "model": "{Gemini Model}" }` (no `changeMode` field).
 
 **Expected**: Response is a standard text response, not changeMode-formatted.
 
@@ -365,7 +365,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.1 — Fetch valid chunk
 
-**Steps**: Using the `cacheKey` from Suite 6, call `Fetch Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 1 }`.
+**Steps**: Using the `cacheKey` from Suite 6, call `Fetch-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 1 }`.
 
 **Expected**: Response contains chunk content from the cached response.
 
@@ -373,7 +373,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.2 — Fetch chunk index out of range
 
-**Steps**: Call `Fetch Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 9999 }`.
+**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 9999 }`.
 
 **Expected**: Error or informational message indicating the chunk index is out of range.
 
@@ -381,7 +381,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.3 — Fetch chunk with zero index
 
-**Steps**: Call `Fetch Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 0 }`.
+**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 0 }`.
 
 **Expected**: Validation error — `chunkIndex` has a minimum value of 1 (1-based indexing).
 
@@ -389,7 +389,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.4 — Invalid cache key
 
-**Steps**: Call `Fetch Chunk` with `{ "cacheKey": "nonexistent_key_abc123", "chunkIndex": 1 }`.
+**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "nonexistent_key_abc123", "chunkIndex": 1 }`.
 
 **Expected**: Error message explaining the cache key is invalid, possibly mentioning expiry, wrong key, or MCP restart. The response includes TTL information (10-minute cache).
 
@@ -397,7 +397,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.5 — Missing cacheKey field
 
-**Steps**: Call `Fetch Chunk` with `{ "chunkIndex": 1 }`.
+**Steps**: Call `Fetch-Chunk` with `{ "chunkIndex": 1 }`.
 
 **Expected**: Validation error — `cacheKey` is a required field.
 
@@ -405,7 +405,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.6 — Missing chunkIndex field
 
-**Steps**: Call `Fetch Chunk` with `{ "cacheKey": "anything" }`.
+**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "anything" }`.
 
 **Expected**: Validation error — `chunkIndex` is a required field.
 
@@ -413,7 +413,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.7 — Negative chunkIndex
 
-**Steps**: Call `Fetch Chunk` with `{ "cacheKey": "anything", "chunkIndex": -1 }`.
+**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "anything", "chunkIndex": -1 }`.
 
 **Expected**: Validation error — `chunkIndex` must be >= 1.
 

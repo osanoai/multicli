@@ -50,10 +50,6 @@ server.oninitialized = () => {
   connectedClientName = clientInfo?.name;
 };
 
-let isProcessing = false;
-let currentOperationName = "";
-let latestOutput = "";
-
 /**
  * @param progressToken The progress token provided by the client
  * @param progress The current progress value
@@ -66,7 +62,7 @@ async function sendProgressNotification(
   total?: number,
   message?: string
 ) {
-  if (!progressToken) return; // Only send if client requested progress
+  if (progressToken === undefined || progressToken === null) return; // Only send if client requested progress
   
   try {
     const params: any = {
@@ -86,47 +82,62 @@ async function sendProgressNotification(
   }
 }
 
-function startProgressUpdates(
+interface ProgressData {
+  timeout?: NodeJS.Timeout;
+  progressToken?: string | number;
+  operationName: string;
+  completed: boolean;
+}
+
+async function startProgressUpdates(
   operationName: string,
   progressToken?: string | number
-) {
-  isProcessing = true;
-  currentOperationName = operationName;
-  latestOutput = ""; // Reset latest output
-  
+): Promise<ProgressData> {
+  const progressData: ProgressData = {
+    operationName,
+    progressToken,
+    completed: false
+  };
+
+  // If no progress token provided, return minimal data without starting a loop
+  if (progressToken === undefined || progressToken === null) {
+    return progressData;
+  }
+
   const progressMessages = [
-    `🧠 ${operationName} - Analyzing your request...`,
-    `📊 ${operationName} - Processing and generating insights...`,
-    `✨ ${operationName} - Creating structured response for your review...`,
-    `⏱️ ${operationName} - Large analysis in progress (this is normal for big requests)...`,
-    `🔍 ${operationName} - Still working on your request...`,
+    `🧠 ${operationName} - Thinking through your request...`,
+    `🔍 ${operationName} - Analyzing context and gathering details...`,
+    `⚙️ ${operationName} - Processing data and generating insights...`,
+    `📝 ${operationName} - Formulating a comprehensive response...`,
+    `⏱️ ${operationName} - Large task in progress (this is normal)...`,
+    `✨ ${operationName} - Refining results for accuracy...`,
+    `📊 ${operationName} - Structuring final output...`,
+    `📡 ${operationName} - Almost there, finalizing the response...`,
+    `🦾 ${operationName} - Still working hard on this...`,
+    `🔄 ${operationName} - Continuing to process...`,
   ];
   
   let messageIndex = 0;
   let progress = 0;
   
-  // Send immediate acknowledgment if progress requested
-  if (progressToken) {
-    sendProgressNotification(
-      progressToken,
-      0,
-      undefined, // No total - indeterminate progress
-      `🔍 Starting ${operationName}`
-    );
-  }
+  // Send immediate acknowledgment and wait for it to ensure correct ordering
+  await sendProgressNotification(
+    progressToken,
+    0,
+    undefined, // No total - indeterminate progress
+    `🔍 Starting ${operationName}`
+  );
   
-  // Keep client alive with periodic updates
-  const progressInterval = setInterval(async () => {
-    if (isProcessing && progressToken) {
+  // Self-scheduling loop instead of setInterval to prevent overlap and races
+  const scheduleNext = () => {
+    progressData.timeout = setTimeout(async () => {
+      if (progressData.completed) return;
+
       // Simply increment progress value
       progress += 1;
       
-      // Include latest output if available
-      const baseMessage = progressMessages[messageIndex % progressMessages.length];
-      const outputPreview = latestOutput.slice(-150).trim(); // Last 150 chars
-      const message = outputPreview 
-        ? `${baseMessage}\n📝 Output: ...${outputPreview}`
-        : baseMessage;
+      // Use standard progress message from rotation
+      const message = progressMessages[messageIndex % progressMessages.length];
       
       await sendProgressNotification(
         progressToken,
@@ -135,30 +146,35 @@ function startProgressUpdates(
         message
       );
       messageIndex++;
-    } else if (!isProcessing) {
-      clearInterval(progressInterval);
-    }
-  }, PROTOCOL.KEEPALIVE_INTERVAL); // Every 25 seconds
+
+      // Schedule next tick only after this one is done
+      if (!progressData.completed) {
+        scheduleNext();
+      }
+    }, PROTOCOL.KEEPALIVE_INTERVAL); // Every 10 seconds
+  };
+
+  scheduleNext();
   
-  return { interval: progressInterval, progressToken };
+  return progressData;
 }
 
-function stopProgressUpdates(
-  progressData: { interval: NodeJS.Timeout; progressToken?: string | number },
+async function stopProgressUpdates(
+  progressData: ProgressData,
   success: boolean = true
 ) {
-  const operationName = currentOperationName; // Store before clearing
-  isProcessing = false;
-  currentOperationName = "";
-  clearInterval(progressData.interval);
+  progressData.completed = true;
+  if (progressData.timeout) {
+    clearTimeout(progressData.timeout);
+  }
   
   // Send final progress notification if client requested progress
-  if (progressData.progressToken) {
-    sendProgressNotification(
+  if (progressData.progressToken !== undefined && progressData.progressToken !== null) {
+    await sendProgressNotification(
       progressData.progressToken,
       100,
       100,
-      success ? `✅ ${operationName} completed successfully` : `❌ ${operationName} failed`
+      success ? `✅ ${progressData.operationName} completed successfully` : `❌ ${progressData.operationName} failed`
     );
   }
 }
@@ -195,19 +211,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
     const progressToken = (request.params as any)._meta?.progressToken;
     
     // Start progress updates if client requested them
-    const progressData = startProgressUpdates(toolName, progressToken);
+    const progressData = await startProgressUpdates(toolName, progressToken);
     
     try {
       // Get prompt and other parameters from arguments with proper typing
       const args: ToolArguments = (request.params.arguments as ToolArguments) || {};
 
-      // Execute the tool using the unified registry with progress callback
-      const result = await executeTool(toolName, args, (newOutput) => {
-        latestOutput = newOutput;
-      });
+      // Execute the tool using the unified registry
+      const result = await executeTool(toolName, args);
 
       // Stop progress updates
-      stopProgressUpdates(progressData, true);
+      await stopProgressUpdates(progressData, true);
 
       return {
         content: [
@@ -220,7 +234,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       };
     } catch (error) {
       // Stop progress updates on error
-      stopProgressUpdates(progressData, false);
+      await stopProgressUpdates(progressData, false);
       
       const errorMessage =
         error instanceof Error ? error.message : String(error);

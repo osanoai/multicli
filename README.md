@@ -164,16 +164,16 @@ Once connected, your AI client gains access to tools for the *other* CLIs (never
 
 | Tool | Description |
 |------|-------------|
-| `List Gemini Models` | List available Gemini models and their strengths |
-| `Ask Gemini` | Ask Gemini a question or give it a task |
-| `Fetch Chunk` | Retrieve chunked responses from Gemini |
-| `Gemini Help` | Get Gemini CLI help info |
-| `List Codex Models` | List available Codex models |
-| `Ask Codex` | Ask Codex a question or give it a task |
-| `Codex Help` | Get Codex CLI help info |
-| `List Claude Models` | List available Claude models |
-| `Ask Claude` | Ask Claude a question or give it a task |
-| `Claude Help` | Get Claude Code CLI help info |
+| `List-Gemini-Models` | List available Gemini models and their strengths |
+| `Ask-Gemini` | Ask-Gemini a question or give it a task |
+| `Fetch-Chunk` | Retrieve chunked responses from Gemini |
+| `Gemini-Help` | Get Gemini CLI help info |
+| `List-Codex-Models` | List available Codex models |
+| `Ask-Codex` | Ask-Codex a question or give it a task |
+| `Codex-Help` | Get Codex CLI help info |
+| `List-Claude-Models` | List available Claude models |
+| `Ask-Claude` | Ask-Claude a question or give it a task |
+| `Claude-Help` | Get Claude Code CLI help info |
 
 ---
 
@@ -182,7 +182,7 @@ Once connected, your AI client gains access to tools for the *other* CLIs (never
 Once installed, just talk naturally to your AI:
 
 ```
-"Ask Gemini what it thinks about this architecture"
+"Ask-Gemini what it thinks about this architecture"
 "Have Codex review this function for performance issues"
 "Get Claude's opinion on this error message"
 "Use Gemini to analyze @largefile.js"

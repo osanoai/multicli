@@ -65,8 +65,8 @@ export const TIER_CONFIG: Record<CLIName, Record<TierName, TierDisplayConfig>> =
 };
 
 export const CLI_NOTES: Record<CLIName, string> = {
-  claude: 'Run Claude Help for the latest CLI options.',
+  claude: 'Run Claude-Help for the latest CLI options.',
   gemini:
-    'Run Gemini Help for the latest CLI options. Model IDs may change as Google releases new versions.',
-  codex: 'Run Codex Help for the latest CLI options. Model IDs may change as OpenAI releases new versions.',
+    'Run Gemini-Help for the latest CLI options. Model IDs may change as Google releases new versions.',
+  codex: 'Run Codex-Help for the latest CLI options. Model IDs may change as OpenAI releases new versions.',
 };

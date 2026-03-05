@@ -24,7 +24,7 @@ After installing a CLI, restart the MCP server to pick up the change.
 `;
 
 export const importantReadNowTool: UnifiedTool = {
-  name: "Claude Gemini Codex",
+  name: "Claude-Gemini-Codex",
   description:
     "CRITICAL: No usable AI CLIs detected by Multi-CLI. Call this tool immediately for troubleshooting instructions.",
   zodSchema: noArgsSchema,

@@ -6,7 +6,7 @@ import { formatCatalog } from '../modelCatalog.js';
 const helpArgsSchema = z.object({});
 
 export const geminiHelpTool: UnifiedTool = {
-  name: "Gemini Help",
+  name: "Gemini-Help",
   description: "Receive help information from the Gemini CLI",
   zodSchema: helpArgsSchema,
   prompt: {
@@ -19,7 +19,7 @@ export const geminiHelpTool: UnifiedTool = {
 };
 
 export const codexHelpTool: UnifiedTool = {
-  name: "Codex Help",
+  name: "Codex-Help",
   description: "Receive help information from the Codex CLI",
   zodSchema: helpArgsSchema,
   prompt: {
@@ -32,7 +32,7 @@ export const codexHelpTool: UnifiedTool = {
 };
 
 export const claudeHelpTool: UnifiedTool = {
-  name: "Claude Help",
+  name: "Claude-Help",
   description: "Receive help information from the Claude Code CLI",
   zodSchema: helpArgsSchema,
   prompt: {
@@ -47,8 +47,8 @@ export const claudeHelpTool: UnifiedTool = {
 const noArgsSchema = z.object({});
 
 export const geminiListModelsTool: UnifiedTool = {
-  name: "List Gemini Models",
-  description: "List available Gemini model families, their strengths, and known model IDs. You MUST call this before Ask Gemini to choose the right model for your task. It's the law.",
+  name: "List-Gemini-Models",
+  description: "List available Gemini model families, their strengths, and known model IDs. You MUST call this before Ask-Gemini to choose the right model for your task. It's the law.",
   zodSchema: noArgsSchema,
   prompt: {
     description: "List available Gemini models with family descriptions",
@@ -60,8 +60,8 @@ export const geminiListModelsTool: UnifiedTool = {
 };
 
 export const codexListModelsTool: UnifiedTool = {
-  name: "List Codex Models",
-  description: "List available Codex model families, their strengths, and known model IDs. You MUST call this before Ask Codex to choose the right model for your task. It's the law.",
+  name: "List-Codex-Models",
+  description: "List available Codex model families, their strengths, and known model IDs. You MUST call this before Ask-Codex to choose the right model for your task. It's the law.",
   zodSchema: noArgsSchema,
   prompt: {
     description: "List available Codex models with family descriptions",
@@ -73,8 +73,8 @@ export const codexListModelsTool: UnifiedTool = {
 };
 
 export const claudeListModelsTool: UnifiedTool = {
-  name: "List Claude Models",
-  description: "List available Claude model families, their strengths, and known model IDs. You MUST call this before Ask Claude to choose the right model for your task. It's the law.",
+  name: "List-Claude-Models",
+  description: "List available Claude model families, their strengths, and known model IDs. You MUST call this before Ask-Claude to choose the right model for your task. It's the law.",
   zodSchema: noArgsSchema,
   prompt: {
     description: "List available Claude models with family descriptions",
