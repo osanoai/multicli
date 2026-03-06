@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-05T21:53:48.446Z",
+  "generatedAt": "2026-03-06T04:31:11.325Z",
   "catalogs": {
     "claude": {
       "cli": "claude",
@@ -7,12 +7,13 @@
         {
           "tier": "fast",
           "models": [
-            "claude-haiku-4-5-20251001"
+            "claude-haiku-4-5"
           ]
         },
         {
           "tier": "balanced",
           "models": [
+            "claude-sonnet-4-5",
             "claude-sonnet-4-6"
           ]
         },
@@ -37,14 +38,15 @@
         {
           "tier": "balanced",
           "models": [
+            "gemini-2.5-pro",
             "gemini-3-flash-preview"
           ]
         },
         {
           "tier": "powerful",
           "models": [
-            "gemini-3.1-pro-preview",
-            "gemini-2.5-pro"
+            "gemini-3-pro-preview",
+            "gemini-3.1-pro-preview"
           ]
         }
       ]
@@ -55,21 +57,27 @@
         {
           "tier": "fast",
           "models": [
+            "gpt-5-codex-mini",
             "gpt-5.1-codex-mini"
           ]
         },
         {
           "tier": "balanced",
           "models": [
-            "gpt-5.2-codex"
+            "gpt-5",
+            "gpt-5-codex",
+            "gpt-5.1",
+            "gpt-5.1-codex",
+            "gpt-5.2",
+            "gpt-5.2-codex",
+            "gpt-5.3-codex"
           ]
         },
         {
           "tier": "powerful",
           "models": [
-            "gpt-5.3-codex",
             "gpt-5.1-codex-max",
-            "gpt-5.2"
+            "gpt-5.4"
           ]
         }
       ]
