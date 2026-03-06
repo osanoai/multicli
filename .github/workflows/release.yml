@@ -28,8 +28,9 @@ jobs:
             exit 0
           fi
 
-          # Skip version-bump commits made by this workflow (defense-in-depth;
-          # pushes via GITHUB_TOKEN don't trigger workflows anyway)
+          # Skip version-bump commits made by this workflow. The app token
+          # push DOES trigger new runs, so this check is the primary guard
+          # against infinite release loops.
           AUTHOR=$(git log -1 --format='%an')
           MSG=$(git log -1 --format='%s')
           if [ "$AUTHOR" = "github-actions[bot]" ] && echo "$MSG" | grep -qE "^chore: release v"; then
@@ -118,14 +119,26 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Use a GitHub App token to bypass branch protection rules on main.
+      # The default GITHUB_TOKEN cannot push directly to protected branches.
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       # Push the version bump BEFORE publishing. If push fails (e.g. due to
       # a concurrent push to main), we haven't mutated npm — safe to retry.
       # If push succeeds but publish later fails, the next run will see the
       # version isn't on npm and retry the publish without re-bumping.
       - name: Commit and push version bump
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git add package.json package-lock.json
           if ! git diff --cached --quiet; then
             git commit -m "chore: release v${{ steps.bump.outputs.version }}"
@@ -136,6 +149,8 @@ jobs:
         run: npm publish --provenance --access public
 
       - name: Tag and push
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git tag "v${{ steps.bump.outputs.version }}"
           git push origin "v${{ steps.bump.outputs.version }}"
