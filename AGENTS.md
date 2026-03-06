@@ -59,16 +59,11 @@ Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claud
 5. **Document Results**: Add review section to `tasks/todo.md`
 6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
 
-### 8. Changesets Required
-- **Every commit that changes source code, dependencies, or configuration MUST include a changeset file.**
-- Run `npm run changeset` before committing. Select the appropriate bump type:
-  - `patch` — bug fixes, dependency updates, code quality improvements
-  - `minor` — new features, new tools, new optional parameters
-  - `major` — breaking changes to tool schemas, removed tools, changed protocol behavior
-- Write a concise summary describing what changed and why (this becomes the CHANGELOG entry).
-- The changeset file (`.changeset/*.md`) must be committed alongside the code changes, not in a separate commit.
-- The only exceptions where a changeset is NOT required: changes that are purely internal to CI/CD workflows, documentation-only changes (README, AGENTS.md), or test-only changes with no source modifications.
-- **Never manually edit `package.json` version** — changesets handles version bumps automatically via the Version Packages PR.
+### 8. Releases
+- **Every push to `main` automatically bumps the patch version and publishes to npm.**
+- The release workflow (`release.yml`) handles version bumps, npm publish, git tags, and GitHub releases — no manual steps needed.
+- **Do not manually edit the `package.json` version for patch releases** — CI auto-increments the patch version on every merge to `main`.
+- For intentional **major** or **minor** version bumps, manually update the `package.json` version before merging to `main` (the workflow will use that version as the base for its patch increment).
 
 ## Core Principles
 
@@ -84,8 +79,7 @@ Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claud
 - `npm run dev` — build then run (`tsc && node dist/index.js`)
 - `npm start` — run compiled server (`node dist/index.js`)
 - `npm run lint` — type-check without emitting (`tsc --noEmit`)
-- `npm run changeset` — create a changeset file (required before committing source changes)
-- `npm run version-packages` — consume changesets and bump version (CI only)
+- `npm run refresh-catalog` — refresh model catalog from CLI source repos
 
 ## Testing
 
