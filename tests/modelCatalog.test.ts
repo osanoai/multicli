@@ -86,6 +86,11 @@ describe('formatCatalog', () => {
     expect(formatted).toContain('[BALANCED]');
     expect(formatted).toContain('[POWERFUL]');
   });
+
+  it.each(clis)('should include version-based selection guidance for "%s"', (cli) => {
+    const formatted = formatCatalog(cli);
+    expect(formatted).toContain('highest version number');
+  });
 });
 
 // ===========================================================================
