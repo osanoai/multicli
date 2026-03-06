@@ -49,11 +49,11 @@ describe('getCatalog', () => {
     }
   });
 
-  it.each(clis)('should include "DEFAULT" in the fast tier label for "%s"', (cli) => {
+  it.each(clis)('should include "DEFAULT" in the balanced tier label for "%s"', (cli) => {
     const catalog = getCatalog(cli);
-    const fastTier = catalog.tiers.find(t => t.tier === 'fast');
-    expect(fastTier).toBeDefined();
-    expect(fastTier!.label).toContain('DEFAULT');
+    const balancedTier = catalog.tiers.find(t => t.tier === 'balanced');
+    expect(balancedTier).toBeDefined();
+    expect(balancedTier!.label).toContain('DEFAULT');
   });
 });
 
@@ -86,6 +86,11 @@ describe('formatCatalog', () => {
     expect(formatted).toContain('[BALANCED]');
     expect(formatted).toContain('[POWERFUL]');
   });
+
+  it.each(clis)('should include version-based selection guidance for "%s"', (cli) => {
+    const formatted = formatCatalog(cli);
+    expect(formatted).toContain('highest version number');
+  });
 });
 
 // ===========================================================================
@@ -110,8 +115,8 @@ describe('tierConfig', () => {
     expect(typeof CLI_NOTES[cli]).toBe('string');
   });
 
-  it.each(clis)('should have "DEFAULT" in the fast tier label for "%s"', (cli) => {
-    expect(TIER_CONFIG[cli].fast.label).toContain('DEFAULT');
+  it.each(clis)('should have "DEFAULT" in the balanced tier label for "%s"', (cli) => {
+    expect(TIER_CONFIG[cli].balanced.label).toContain('DEFAULT');
   });
 
   it('tierConfig labels should match catalog labels', () => {
