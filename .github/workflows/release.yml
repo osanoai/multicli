@@ -11,40 +11,97 @@ concurrency:
 
 jobs:
   check:
-    name: Check if release needed
+    name: Decide action
     runs-on: ubuntu-latest
     outputs:
-      should_release: ${{ steps.decide.outputs.should_release }}
+      action: ${{ steps.decide.outputs.action }}
+      version: ${{ steps.decide.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Decide
         id: decide
         run: |
-          # Manual dispatch always releases
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "Manual dispatch — releasing"
+          CURRENT=$(node -p "require('./package.json').version")
+
+          # Check if this version is already published to npm
+          if npm view "@osanoai/multicli@$CURRENT" version >/dev/null 2>&1; then
+            echo "action=bump" >> $GITHUB_OUTPUT
+            echo "Version $CURRENT already on npm — will create bump PR"
+          else
+            echo "action=publish" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT" >> $GITHUB_OUTPUT
+            echo "Version $CURRENT not on npm — will publish"
+          fi
+
+  # ── BUMP PATH: version exists on npm → open a PR to increment ──────────
+
+  bump:
+    name: Create version bump PR
+    needs: check
+    if: needs.check.outputs.action == 'bump'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        with:
+          node-version: '24'
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Bump version and open PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # Skip if a bump PR is already open
+          EXISTING=$(gh pr list --base main --head "chore/version-bump" --state open --json number -q '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "Bump PR #$EXISTING already open — skipping"
             exit 0
           fi
 
-          # Skip version-bump commits made by this workflow. The app token
-          # push DOES trigger new runs, so this check is the primary guard
-          # against infinite release loops.
-          AUTHOR=$(git log -1 --format='%an')
-          MSG=$(git log -1 --format='%s')
-          if [ "$AUTHOR" = "github-actions[bot]" ] && echo "$MSG" | grep -qE "^chore: release v"; then
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "Skipping — this is a version bump commit"
-          else
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "Will release"
-          fi
+          npm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          BRANCH="chore/version-bump"
+          git checkout -b "$BRANCH"
+          git add package.json package-lock.json
+          git commit -m "chore: release v$VERSION"
+          git push -f origin "$BRANCH"
+
+          gh pr create \
+            --title "chore: release v$VERSION" \
+            --body "Automated patch version bump. Merging publishes v$VERSION to npm." \
+            --base main \
+            --head "$BRANCH"
+          gh pr merge --auto --squash
+
+  # ── PUBLISH PATH: new version → scan, test, publish ────────────────────
 
   scan:
     name: Security Scan
     needs: check
-    if: needs.check.outputs.should_release == 'true'
+    if: needs.check.outputs.action == 'publish'
     uses: ./.github/workflows/scan.yml
     permissions:
       security-events: write
@@ -56,19 +113,16 @@ jobs:
     needs: scan
     uses: ./.github/workflows/tests.yml
 
-  release:
+  publish:
     name: Publish & Release
     needs: [check, test]
-    if: needs.check.outputs.should_release == 'true'
+    if: needs.check.outputs.action == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: write
       id-token: write
     steps:
-      # Check out the latest main — NOT the triggering SHA. This ensures
-      # queued runs (from rapid successive pushes) pick up version bumps
-      # committed by earlier runs, preventing duplicate version conflicts.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: main
@@ -97,63 +151,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Determine version
-        id: bump
-        run: |
-          CURRENT=$(node -p "require('./package.json').version")
-
-          # Only bump if the current version already exists on npm.
-          # This preserves manual major/minor bumps made in PRs —
-          # if someone sets version to 2.0.0, we publish 2.0.0 (not 2.0.1).
-          if npm view "@osanoai/multicli@$CURRENT" version >/dev/null 2>&1; then
-            npm version patch --no-git-tag-version
-            VERSION=$(node -p "require('./package.json').version")
-            echo "Bumped $CURRENT → $VERSION"
-          else
-            VERSION="$CURRENT"
-            echo "Version $VERSION not yet on npm — publishing as-is"
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Build
         run: npm run build
-
-      # Use a GitHub App token to bypass branch protection rules on main.
-      # The default GITHUB_TOKEN cannot push directly to protected branches.
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      # Push the version bump BEFORE publishing. If push fails (e.g. due to
-      # a concurrent push to main), we haven't mutated npm — safe to retry.
-      # If push succeeds but publish later fails, the next run will see the
-      # version isn't on npm and retry the publish without re-bumping.
-      - name: Commit and push version bump
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          git add package.json package-lock.json
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: release v${{ steps.bump.outputs.version }}"
-            git push origin HEAD:main
-          fi
 
       - name: Publish to npm with provenance
         run: npm publish --provenance --access public
 
-      - name: Tag and push
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Tag and release
         run: |
-          git tag "v${{ steps.bump.outputs.version }}"
-          git push origin "v${{ steps.bump.outputs.version }}"
+          git tag "v${{ needs.check.outputs.version }}"
+          git push origin "v${{ needs.check.outputs.version }}"
 
       - name: Create GitHub Release
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
@@ -162,7 +169,7 @@ jobs:
             await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `v${{ steps.bump.outputs.version }}`,
-              name: `v${{ steps.bump.outputs.version }}`,
+              tag_name: `v${{ needs.check.outputs.version }}`,
+              name: `v${{ needs.check.outputs.version }}`,
               generate_release_notes: true,
             });
