@@ -3,6 +3,12 @@ name: Release & Publish
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'README.md'
   workflow_dispatch:
 
 concurrency:
