@@ -167,9 +167,10 @@ export function getCatalog(cli: 'gemini' | 'codex' | 'claude'): CLICatalog {
 }
 
 const SELECTION_RULE =
-  `MODEL SELECTION RULE: Always use the fastest (smallest) model that can handle the task. ` +
-  `Default to the "fast" tier. Only escalate when the task clearly requires more capability. ` +
-  `Simple questions, math, lookups, and trivial code do NOT need powerful models.\n`;
+  `MODEL SELECTION RULE: Default to the "balanced" tier for most tasks. ` +
+  `Use "powerful" for complex reasoning, architecture, nuanced analysis, or when quality matters most. ` +
+  `Reserve "fast" only for trivial lookups, simple math, or quick one-line answers. ` +
+  `When multiple model IDs are listed for a tier, always prefer the LAST one (newest and most capable).\n`;
 
 export function formatCatalog(cli: 'gemini' | 'codex' | 'claude'): string {
   const catalog = CATALOGS[cli];
@@ -181,7 +182,12 @@ export function formatCatalog(cli: 'gemini' | 'codex' | 'claude'): string {
   for (const tier of catalog.tiers) {
     lines.push(`[${tier.tier.toUpperCase()}] ${tier.label}`);
     lines.push(`  Use when: ${tier.useWhen}`);
-    lines.push(`  Model IDs: ${tier.models.join(', ')}`);
+    const ids = tier.models;
+    const idStr =
+      ids.length > 1
+        ? ids.slice(0, -1).join(', ') + ', ' + ids[ids.length - 1] + ' ← recommended'
+        : ids[0];
+    lines.push(`  Model IDs: ${idStr}`);
     lines.push('');
   }
 
