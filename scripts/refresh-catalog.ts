@@ -151,8 +151,12 @@ function discoverModels(config: CLIConfig): string[] | null {
 
 // ── Phase 1.5: PROBE ────────────────────────────────────────────────────
 
+const TRANSIENT_PATTERNS = /ETIMEDOUT|ECONNRESET|ECONNREFUSED|EPIPE|socket hang up|timeout|rate.?limit|429|503|502/i;
+const PROBE_MAX_RETRIES = 3;
+
 /**
  * Probe each discovered model by running a trivial CLI prompt.
+ * Retries up to PROBE_MAX_RETRIES times on transient errors (timeouts, network).
  * Returns only the model IDs that respond successfully.
  */
 export function probeModels(config: CLIConfig, modelIds: string[]): string[] {
@@ -162,17 +166,31 @@ export function probeModels(config: CLIConfig, modelIds: string[]): string[] {
 
   for (const id of modelIds) {
     const command = config.buildEnrichmentCommand(id, 'respond with OK');
-    try {
-      execSync(command, {
-        encoding: 'utf-8',
-        timeout: 30_000,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+    let succeeded = false;
+
+    for (let attempt = 1; attempt <= PROBE_MAX_RETRIES; attempt++) {
+      try {
+        execSync(command, {
+          encoding: 'utf-8',
+          timeout: 30_000,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        succeeded = true;
+        break;
+      } catch (err) {
+        const reason = err instanceof Error ? err.message.split('\n')[0] : String(err);
+        if (attempt < PROBE_MAX_RETRIES && TRANSIENT_PATTERNS.test(reason)) {
+          console.warn(`    ${id}: transient failure (attempt ${attempt}/${PROBE_MAX_RETRIES}) — ${reason}`);
+          continue;
+        }
+        console.warn(`    ${id}: unavailable — ${reason}`);
+        break;
+      }
+    }
+
+    if (succeeded) {
       valid.push(id);
       console.log(`    ${id}: available`);
-    } catch (err) {
-      const reason = err instanceof Error ? err.message.split('\n')[0] : String(err);
-      console.warn(`    ${id}: unavailable — ${reason}`);
     }
   }
 
