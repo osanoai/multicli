@@ -335,13 +335,32 @@ describe('probeModels', () => {
     expect(mockExecSync).toHaveBeenCalledTimes(3);
   });
 
-  it('filters out models that fail probing', () => {
+  it('filters out models that fail probing with non-transient errors', () => {
     mockExecSync
       .mockReturnValueOnce('OK')           // model-a: success
-      .mockImplementationOnce(() => { throw new Error('model not found'); }) // model-b: fail
+      .mockImplementationOnce(() => { throw new Error('model not found'); }) // model-b: fail (no retry)
       .mockReturnValueOnce('OK');           // model-c: success
     const result = probeModels(fakeConfig, ['model-a', 'model-b', 'model-c']);
     expect(result).toEqual(['model-a', 'model-c']);
+    // model-b should only be attempted once (non-transient error)
+    expect(mockExecSync).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries on transient errors and succeeds', () => {
+    mockExecSync
+      .mockImplementationOnce(() => { throw new Error('spawnSync /bin/sh ETIMEDOUT'); }) // attempt 1: timeout
+      .mockImplementationOnce(() => { throw new Error('socket hang up'); })              // attempt 2: network
+      .mockReturnValueOnce('OK');                                                         // attempt 3: success
+    const result = probeModels(fakeConfig, ['model-a']);
+    expect(result).toEqual(['model-a']);
+    expect(mockExecSync).toHaveBeenCalledTimes(3);
+  });
+
+  it('gives up after max retries on persistent transient errors', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('spawnSync /bin/sh ETIMEDOUT'); });
+    const result = probeModels(fakeConfig, ['model-a']);
+    expect(result).toEqual([]);
+    expect(mockExecSync).toHaveBeenCalledTimes(3); // 3 attempts then give up
   });
 
   it('returns empty array when all probes fail', () => {
