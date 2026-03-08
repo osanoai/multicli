@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-07T21:42:59.568Z",
+  "generatedAt": "2026-03-08T09:11:00.462Z",
   "catalogs": {
     "claude": {
       "cli": "claude",
@@ -57,14 +57,14 @@
         {
           "tier": "fast",
           "models": [
-            "gpt-5",
+            "gpt-5-codex",
             "gpt-5.1-codex-mini"
           ]
         },
         {
           "tier": "balanced",
           "models": [
-            "gpt-5-codex",
+            "gpt-5",
             "gpt-5.1",
             "gpt-5.1-codex",
             "gpt-5.2"
