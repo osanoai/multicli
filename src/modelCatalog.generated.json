@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-08T09:11:00.462Z",
+  "generatedAt": "2026-03-09T09:22:14.295Z",
   "catalogs": {
     "claude": {
       "cli": "claude",
@@ -57,6 +57,7 @@
         {
           "tier": "fast",
           "models": [
+            "gpt-5",
             "gpt-5-codex",
             "gpt-5.1-codex-mini"
           ]
@@ -64,17 +65,16 @@
         {
           "tier": "balanced",
           "models": [
-            "gpt-5",
             "gpt-5.1",
             "gpt-5.1-codex",
-            "gpt-5.2"
+            "gpt-5.2",
+            "gpt-5.2-codex"
           ]
         },
         {
           "tier": "powerful",
           "models": [
             "gpt-5.1-codex-max",
-            "gpt-5.2-codex",
             "gpt-5.3-codex",
             "gpt-5.4"
           ]
