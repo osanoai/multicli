@@ -75,7 +75,7 @@ describe('cliDetector', () => {
       process.env.QA_NO_CLIS = 'true';
 
       const result = await detectAvailableClis();
-      expect(result).toEqual({ gemini: false, codex: false, claude: false });
+      expect(result).toEqual({ gemini: false, codex: false, claude: false, opencode: false });
       // spawn should not be called at all
       expect(spawn).not.toHaveBeenCalled();
     });
@@ -92,15 +92,16 @@ describe('cliDetector', () => {
       const promise = detectAvailableClis();
 
       // Wait for all spawns to be called
-      await vi.waitFor(() => expect(mocks.length).toBe(3));
+      await vi.waitFor(() => expect(mocks.length).toBe(4));
 
-      // gemini found, codex not found, claude found
+      // gemini found, codex not found, claude found, opencode not found
       mocks[0].emitClose(0); // gemini
       mocks[1].emitClose(1); // codex
       mocks[2].emitClose(0); // claude
+      mocks[3].emitClose(1); // opencode
 
       const result = await promise;
-      expect(result).toEqual({ gemini: true, codex: false, claude: true });
+      expect(result).toEqual({ gemini: true, codex: false, claude: true, opencode: false });
     });
   });
 });

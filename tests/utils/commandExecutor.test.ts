@@ -115,6 +115,38 @@ describe('commandExecutor', () => {
 
     await expect(promise).rejects.toThrow('Failed to spawn command');
   });
+
+  it('rejects with timeout error when timeoutMs elapses', async () => {
+    vi.useFakeTimers();
+    const mock = createMockProcess();
+    // Add kill mock to the process
+    (mock.proc as any).kill = vi.fn();
+    vi.mocked(spawn).mockReturnValue(mock.proc as any);
+
+    const promise = executeCommand('slow', [], undefined, 5000);
+    vi.advanceTimersByTime(5000);
+
+    await expect(promise).rejects.toThrow('Command timed out after 5000ms');
+    expect((mock.proc as any).kill).toHaveBeenCalledWith('SIGTERM');
+    vi.useRealTimers();
+  });
+
+  it('clears timeout when command completes before timeout', async () => {
+    vi.useFakeTimers();
+    const mock = createMockProcess();
+    (mock.proc as any).kill = vi.fn();
+    vi.mocked(spawn).mockReturnValue(mock.proc as any);
+
+    const promise = executeCommand('fast', [], undefined, 30000);
+    mock.emitStdout('done');
+    mock.emitClose(0);
+
+    const result = await promise;
+    expect(result).toBe('done');
+    // Process should not have been killed
+    expect((mock.proc as any).kill).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });
 
 describe('sanitizeArgForCmd', () => {

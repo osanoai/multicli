@@ -10,7 +10,9 @@ export interface TierDisplayConfig {
 }
 
 export type TierName = 'fast' | 'balanced' | 'powerful';
-export type CLIName = 'claude' | 'gemini' | 'codex';
+export type CLIName = 'claude' | 'gemini' | 'codex' | 'opencode';
+/** CLIs that use the static generated model catalog (not dynamic discovery). */
+export type StaticCLIName = 'claude' | 'gemini' | 'codex';
 
 export const TIER_CONFIG: Record<CLIName, Record<TierName, TierDisplayConfig>> = {
   claude: {
@@ -61,6 +63,22 @@ export const TIER_CONFIG: Record<CLIName, Record<TierName, TierDisplayConfig>> =
         'Complex architecture, large refactors, deep reasoning, nuanced analysis, multi-step planning.',
     },
   },
+  opencode: {
+    fast: {
+      label: 'Fast',
+      useWhen: 'Only for: trivial lookups, simple math, quick one-line answers.',
+    },
+    balanced: {
+      label: 'Balanced (DEFAULT)',
+      useWhen:
+        'Most tasks: coding, analysis, multi-step work, debugging, code review. USE THIS BY DEFAULT.',
+    },
+    powerful: {
+      label: 'Powerful',
+      useWhen:
+        'Complex reasoning, nuanced analysis, architectural decisions, large refactors, or when you need the highest quality.',
+    },
+  },
 };
 
 export const CLI_NOTES: Record<CLIName, string> = {
@@ -68,4 +86,5 @@ export const CLI_NOTES: Record<CLIName, string> = {
   gemini:
     'Run Gemini-Help for the latest CLI options. Model IDs may change as Google releases new versions.',
   codex: 'Run Codex-Help for the latest CLI options. Model IDs may change as OpenAI releases new versions.',
+  opencode: 'OpenCode models are dynamically discovered from your configured providers. Models are classified into tiers automatically. Run OpenCode-Help for CLI options.',
 };

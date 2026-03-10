@@ -2,12 +2,13 @@
 import { toolRegistry } from './registry.js';
 import { askGeminiTool } from './ask-gemini.tool.js';
 import {
-  geminiHelpTool, codexHelpTool, claudeHelpTool,
-  geminiListModelsTool, codexListModelsTool, claudeListModelsTool,
+  geminiHelpTool, codexHelpTool, claudeHelpTool, opencodeHelpTool,
+  geminiListModelsTool, codexListModelsTool, claudeListModelsTool, opencodeListModelsTool,
 } from './simple-tools.js';
 import { fetchChunkTool } from './fetch-chunk.tool.js';
 import { askCodexTool } from './ask-codex.tool.js';
 import { askClaudeTool } from './ask-claude.tool.js';
+import { askOpencodeTool } from './ask-opencode.tool.js';
 import { detectAvailableClis, CliAvailability } from '../utils/cliDetector.js';
 
 /**
@@ -39,6 +40,14 @@ export async function initTools(): Promise<CliAvailability> {
       claudeListModelsTool,   // List-Claude-Models
       askClaudeTool,          // Ask-Claude
       claudeHelpTool,         // Claude-Help
+    );
+  }
+
+  if (availability.opencode) {
+    toolRegistry.push(
+      opencodeListModelsTool, // List-OpenCode-Models
+      askOpencodeTool,        // Ask-OpenCode
+      opencodeHelpTool,       // OpenCode-Help
     );
   }
 

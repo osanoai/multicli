@@ -14,6 +14,7 @@ export const STATUS_MESSAGES = {
   GEMINI_RESPONSE: "Gemini response:",
   CODEX_RESPONSE: "Codex response:",
   CLAUDE_RESPONSE: "Claude response:",
+  OPENCODE_RESPONSE: "OpenCode response:",
   // Timeout prevention messages
   PROCESSING_START: "🔍 Starting analysis (may take 5-15 minutes for large codebases)",
   PROCESSING_CONTINUE: "⏳ Still processing...",
@@ -54,6 +55,7 @@ export const CLI = {
     GEMINI: "gemini",
     CODEX: "codex",
     CLAUDE: "claude",
+    OPENCODE: "opencode",
     ECHO: "echo",
   },
   // Gemini command flags
@@ -86,6 +88,18 @@ export const CLI = {
     SYSTEM_PROMPT: "--system-prompt",
     TOOLS: "--tools",
     HELP: "--help",
+  },
+  // OpenCode flags
+  OPENCODE_FLAGS: {
+    MODEL: "-m",
+    CONTINUE: "-c",
+    SESSION: "-s",
+    HELP: "--help",
+  },
+  // OpenCode subcommands
+  OPENCODE_SUBCOMMANDS: {
+    RUN: "run",
+    MODELS: "models",
   },
   // Default values
   DEFAULTS: {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { UnifiedTool } from './registry.js';
 import { executeCommand } from '../utils/commandExecutor.js';
 import { formatCatalog } from '../modelCatalog.js';
+import { getOpencodeClassifiedCatalog } from '../utils/opencodeCatalog.js';
 
 const helpArgsSchema = z.object({});
 
@@ -84,3 +85,30 @@ export const claudeListModelsTool: UnifiedTool = {
     return formatCatalog('claude');
   }
 };
+
+export const opencodeHelpTool: UnifiedTool = {
+  name: "OpenCode-Help",
+  description: "Receive help information from the OpenCode CLI",
+  zodSchema: helpArgsSchema,
+  prompt: {
+    description: "Receive help information from the OpenCode CLI",
+  },
+  category: 'opencode',
+  execute: async (args, onProgress) => {
+    return executeCommand("opencode", ["--help"], onProgress);
+  }
+};
+
+export const opencodeListModelsTool: UnifiedTool = {
+  name: "List-OpenCode-Models",
+  description: "List available OpenCode models from all configured providers, classified into tiers. You MUST call this before Ask-OpenCode to choose the right model for your task. Models are dynamically discovered from your providers.",
+  zodSchema: noArgsSchema,
+  prompt: {
+    description: "List available OpenCode models with tier classifications",
+  },
+  category: 'opencode',
+  execute: async () => {
+    return getOpencodeClassifiedCatalog();
+  }
+};
+

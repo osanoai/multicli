@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import { TIER_CONFIG, CLI_NOTES } from './tierConfig.js';
-import type { CLIName, TierName } from './tierConfig.js';
+import type { StaticCLIName, TierName } from './tierConfig.js';
 
 export interface ModelTier {
   tier: 'fast' | 'balanced' | 'powerful';
@@ -10,7 +10,7 @@ export interface ModelTier {
 }
 
 export interface CLICatalog {
-  cli: 'gemini' | 'codex' | 'claude';
+  cli: StaticCLIName;
   tiers: ModelTier[];
   note: string;
 }
@@ -56,7 +56,7 @@ try {
 // ── Build catalog from generated data (no static fallback — generated file
 //    is checked into git and always ships with the package) ──────────────────
 
-function buildFromGenerated(cliName: CLIName): CLICatalog | null {
+function buildFromGenerated(cliName: StaticCLIName): CLICatalog | null {
   const entry = generatedData.catalogs[cliName];
   if (!entry?.tiers?.length) return null;
 
@@ -100,7 +100,7 @@ for (const cli of ['gemini', 'codex', 'claude'] as const) {
 
 // ── Public API (unchanged signatures) ────────────────────────────────────────
 
-export function getCatalog(cli: 'gemini' | 'codex' | 'claude'): CLICatalog {
+export function getCatalog(cli: StaticCLIName): CLICatalog {
   return CATALOGS[cli];
 }
 
@@ -110,7 +110,7 @@ const SELECTION_RULE =
   `Reserve "fast" only for trivial lookups, simple math, or quick one-line answers. ` +
   `When multiple model IDs are listed for a tier, prefer the one with the highest version number (newest and most capable).\n`;
 
-export function formatCatalog(cli: 'gemini' | 'codex' | 'claude'): string {
+export function formatCatalog(cli: StaticCLIName): string {
   const catalog = CATALOGS[cli];
   const lines: string[] = [
     `${catalog.cli.toUpperCase()} — Available Models\n`,
