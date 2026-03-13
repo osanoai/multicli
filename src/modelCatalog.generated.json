@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-12T09:20:06.314Z",
+  "generatedAt": "2026-03-13T09:18:01.575Z",
   "catalogs": {
     "claude": {
       "cli": "claude",
@@ -32,14 +32,14 @@
           "tier": "fast",
           "models": [
             "gemini-2.5-flash",
-            "gemini-2.5-flash-lite"
+            "gemini-2.5-flash-lite",
+            "gemini-3-flash-preview"
           ]
         },
         {
           "tier": "balanced",
           "models": [
-            "gemini-2.5-pro",
-            "gemini-3-flash-preview"
+            "gemini-2.5-pro"
           ]
         },
         {
@@ -57,6 +57,7 @@
         {
           "tier": "fast",
           "models": [
+            "gpt-5-codex",
             "gpt-5.1-codex-mini"
           ]
         },
@@ -64,7 +65,6 @@
           "tier": "balanced",
           "models": [
             "gpt-5",
-            "gpt-5-codex",
             "gpt-5.1",
             "gpt-5.1-codex",
             "gpt-5.2",
