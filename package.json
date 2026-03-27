@@ -58,6 +58,9 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
+  "overrides": {
+    "picomatch": "^4.0.4"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true
