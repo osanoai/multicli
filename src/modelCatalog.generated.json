@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-25T09:24:54.285Z",
+  "generatedAt": "2026-03-27T09:23:11.515Z",
   "catalogs": {
     "claude": {
       "cli": "claude",
@@ -13,14 +13,13 @@
         {
           "tier": "balanced",
           "models": [
-            "claude-sonnet-4-5",
-            "claude-sonnet-4-6"
+            "claude-sonnet-4-5"
           ]
         },
         {
           "tier": "powerful",
           "models": [
-            "claude-opus-4-6"
+            "claude-sonnet-4-6"
           ]
         }
       ]
@@ -33,13 +32,14 @@
           "models": [
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
+            "gemini-3-flash-preview",
             "gemini-3.1-flash-lite-preview"
           ]
         },
         {
           "tier": "balanced",
           "models": [
-            "gemini-3-flash-preview"
+            "gemini-2.5-pro"
           ]
         },
         {
@@ -57,14 +57,14 @@
         {
           "tier": "fast",
           "models": [
-            "gpt-5",
-            "gpt-5-codex",
             "gpt-5.1-codex-mini"
           ]
         },
         {
           "tier": "balanced",
           "models": [
+            "gpt-5",
+            "gpt-5-codex",
             "gpt-5.1",
             "gpt-5.1-codex",
             "gpt-5.2",
