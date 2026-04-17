@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-01T09:31:55.203Z",
+  "generatedAt": "2026-04-17T09:35:21.769Z",
   "catalogs": {
     "claude": {
       "cli": "claude",
@@ -20,7 +20,7 @@
         {
           "tier": "powerful",
           "models": [
-            "claude-opus-4-6"
+            "claude-opus-4-7"
           ]
         }
       ]
