@@ -59,6 +59,12 @@ Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claud
 5. **Document Results**: Add review section to `tasks/todo.md`
 6. **Capture Lessons**: Record in `tasks/lessons.md` (create if needed)
 
+## GitHub CLI Auth
+
+- On this machine, `gh` may be authenticated via the macOS keyring but appear unauthenticated inside Codex's default sandbox because the keyring token is not visible there.
+- If `gh auth status` fails in Codex but the user says `gh` is authed, rerun the same `gh` command with escalation before concluding auth is broken.
+- Prefer escalated `gh` for GitHub API operations that require keyring credentials, including PR creation, PR checks, and workflow log inspection.
+
 ### 8. Releases
 - The release workflow (`release.yml`) uses a **bump PR pattern** triggered on every push to `main` and on `workflow_dispatch`.
 - If the current `package.json` version is already published on npm, the workflow creates an automated `chore/version-bump` PR that increments the patch version and enables auto-merge.
