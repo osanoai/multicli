@@ -15,6 +15,7 @@ export const STATUS_MESSAGES = {
   CODEX_RESPONSE: "Codex response:",
   CLAUDE_RESPONSE: "Claude response:",
   OPENCODE_RESPONSE: "OpenCode response:",
+  CURSOR_RESPONSE: "Cursor response:",
   // Timeout prevention messages
   PROCESSING_START: "🔍 Starting analysis (may take 5-15 minutes for large codebases)",
   PROCESSING_CONTINUE: "⏳ Still processing...",
@@ -56,6 +57,7 @@ export const CLI = {
     CODEX: "codex",
     CLAUDE: "claude",
     OPENCODE: "opencode",
+    CURSOR: "cursor-agent",
     ECHO: "echo",
   },
   // Gemini command flags
@@ -100,6 +102,17 @@ export const CLI = {
   OPENCODE_SUBCOMMANDS: {
     RUN: "run",
     MODELS: "models",
+  },
+  // Cursor Agent CLI flags
+  CURSOR_FLAGS: {
+    PRINT: "--print",
+    OUTPUT_FORMAT: "--output-format",
+    MODEL: "--model",
+    LIST_MODELS: "--list-models",
+    FORCE: "--force",
+    TRUST: "--trust",
+    WORKSPACE: "--workspace",
+    HELP: "--help",
   },
   // Default values
   DEFAULTS: {

@@ -2,13 +2,14 @@
 import { toolRegistry } from './registry.js';
 import { askGeminiTool } from './ask-gemini.tool.js';
 import {
-  geminiHelpTool, codexHelpTool, claudeHelpTool, opencodeHelpTool,
-  geminiListModelsTool, codexListModelsTool, claudeListModelsTool, opencodeListModelsTool,
+  geminiHelpTool, codexHelpTool, claudeHelpTool, opencodeHelpTool, cursorHelpTool,
+  geminiListModelsTool, codexListModelsTool, claudeListModelsTool, opencodeListModelsTool, cursorListModelsTool,
 } from './simple-tools.js';
 import { fetchChunkTool } from './fetch-chunk.tool.js';
 import { askCodexTool } from './ask-codex.tool.js';
 import { askClaudeTool } from './ask-claude.tool.js';
 import { askOpencodeTool } from './ask-opencode.tool.js';
+import { askCursorTool } from './ask-cursor.tool.js';
 import { detectAvailableClis, CliAvailability } from '../utils/cliDetector.js';
 import { MultiCliConfig } from '../config.js';
 import type { Logger } from '../logger.js';
@@ -56,6 +57,14 @@ export async function initTools(
       opencodeListModelsTool, // List-OpenCode-Models
       askOpencodeTool,        // Ask-OpenCode
       opencodeHelpTool,       // OpenCode-Help
+    );
+  }
+
+  if (availability.cursor) {
+    toolRegistry.push(
+      cursorListModelsTool,   // List-Cursor-Models
+      askCursorTool,          // Ask-Cursor
+      cursorHelpTool,         // Cursor-Help
     );
   }
 

@@ -19,7 +19,7 @@ export interface UnifiedTool {
   };
   
   execute: (args: ToolArguments, context?: ToolExecutionContext) => Promise<string>;
-  category?: 'gemini' | 'codex' | 'claude' | 'opencode' | 'utility';
+  category?: 'gemini' | 'codex' | 'claude' | 'opencode' | 'cursor' | 'utility';
   execution?: Tool['execution'];
   timeoutClass?: ToolTimeoutClass;
 }

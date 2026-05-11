@@ -3,6 +3,7 @@ import { UnifiedTool } from './registry.js';
 import { executeCommand } from '../utils/commandExecutor.js';
 import { formatCatalog } from '../modelCatalog.js';
 import { getOpencodeClassifiedCatalog } from '../utils/opencodeCatalog.js';
+import { CLI } from '../constants.js';
 
 const helpArgsSchema = z.object({});
 
@@ -106,4 +107,29 @@ export const opencodeListModelsTool: UnifiedTool = {
   execute: async () => {
     return getOpencodeClassifiedCatalog();
   }
+};
+
+export const cursorHelpTool: UnifiedTool = {
+  name: "Cursor-Help",
+  description: "Receive help information from the Cursor Agent CLI",
+  zodSchema: helpArgsSchema,
+  prompt: {
+    description: "Receive help information from the Cursor Agent CLI",
+  },
+  category: 'cursor',
+  timeoutClass: 'help',
+  execute: async (_args, context) => executeCommand("cursor-agent", ["--help"], context),
+};
+
+export const cursorListModelsTool: UnifiedTool = {
+  name: "List-Cursor-Models",
+  description: "List available Cursor Agent CLI models (cursor-agent --list-models). You MUST call this before Ask-Cursor to choose a valid model.",
+  zodSchema: noArgsSchema,
+  prompt: {
+    description: "List available Cursor models from the Agent CLI",
+  },
+  category: 'cursor',
+  timeoutClass: 'help',
+  execute: async (_args, context) =>
+    executeCommand(CLI.COMMANDS.CURSOR, [CLI.CURSOR_FLAGS.LIST_MODELS], context),
 };
