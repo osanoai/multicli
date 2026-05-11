@@ -9,6 +9,7 @@ import { fetchChunkTool } from './fetch-chunk.tool.js';
 import { askCodexTool } from './ask-codex.tool.js';
 import { askClaudeTool } from './ask-claude.tool.js';
 import { askOpencodeTool } from './ask-opencode.tool.js';
+import { opencodeCopilotUsageTool } from './opencode-copilot-usage.tool.js';
 import { detectAvailableClis, CliAvailability } from '../utils/cliDetector.js';
 import { MultiCliConfig } from '../config.js';
 import type { Logger } from '../logger.js';
@@ -55,6 +56,7 @@ export async function initTools(
     toolRegistry.push(
       opencodeListModelsTool, // List-OpenCode-Models
       askOpencodeTool,        // Ask-OpenCode
+      opencodeCopilotUsageTool, // OpenCode-Copilot-Usage
       opencodeHelpTool,       // OpenCode-Help
     );
   }

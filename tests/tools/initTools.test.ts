@@ -82,6 +82,7 @@ describe('initTools', () => {
     const names = toolRegistry.map(t => t.name);
     expect(names).toContain('List-OpenCode-Models');
     expect(names).toContain('Ask-OpenCode');
+    expect(names).toContain('OpenCode-Copilot-Usage');
     expect(names).toContain('OpenCode-Help');
     expect(names).not.toContain('Ask-Gemini');
     expect(names).not.toContain('Ask-Codex');
