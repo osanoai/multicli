@@ -30,6 +30,7 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('Get-Run');
     expect(names).toContain('List-Gemini-Models');
     expect(names).toContain('Ask-Gemini');
     expect(names).toContain('Fetch-Chunk');
@@ -48,6 +49,7 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('Get-Run');
     expect(names).toContain('List-Codex-Models');
     expect(names).toContain('Ask-Codex');
     expect(names).toContain('Codex-Help');
@@ -64,6 +66,7 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('Get-Run');
     expect(names).toContain('List-Claude-Models');
     expect(names).toContain('Ask-Claude');
     expect(names).toContain('Claude-Help');
@@ -80,6 +83,7 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('Get-Run');
     expect(names).toContain('List-OpenCode-Models');
     expect(names).toContain('Ask-OpenCode');
     expect(names).toContain('OpenCode-Help');
@@ -96,19 +100,20 @@ describe('initTools', () => {
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('Get-Run');
     expect(names).toContain('Ask-Gemini');
     expect(names).toContain('Ask-Codex');
     expect(names).not.toContain('Ask-Claude');
     expect(names).not.toContain('Ask-OpenCode');
   });
 
-  it('registers no tools when no CLIs available', async () => {
+  it('registers Get-Run only when no CLIs available', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
       gemini: false, codex: false, claude: false, opencode: false,
     });
 
     await initTools();
-    expect(toolRegistry).toHaveLength(0);
+    expect(toolRegistry.map((t) => t.name)).toEqual(['Get-Run']);
   });
 
   it('returns availability object', async () => {

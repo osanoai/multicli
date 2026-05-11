@@ -68,7 +68,8 @@ describe('commandExecutor', () => {
     mock.emitStderr('something went wrong');
     mock.emitClose(1);
 
-    await expect(promise).rejects.toThrow('exit code 1: something went wrong');
+    await expect(promise).rejects.toThrow('Command failed with code 1: something went wrong');
+    await expect(promise).rejects.toThrow('"error_type": "FAILED"');
   });
 
   it('rejects with "Unknown error" when stderr is empty on failure', async () => {
@@ -217,7 +218,8 @@ describe('commandExecutor', () => {
       const promise = executeCommand('gemini', ['prompt'], {});
       mock.emitStderr('RESOURCE_EXHAUSTED: quota exceeded');
 
-      await expect(promise).rejects.toThrow('quota exhaustion');
+      await expect(promise).rejects.toThrow('Quota exhausted: RESOURCE_EXHAUSTED: quota exceeded');
+      await expect(promise).rejects.toThrow('"error_type": "RESOURCE_EXHAUSTED"');
       expect(processKill).toHaveBeenCalledWith(-123, 'SIGTERM');
     } finally {
       processKill.mockRestore();

@@ -132,6 +132,18 @@ describe('registry', () => {
       });
     });
 
+    it('adds readOnlyHint annotation to Get-Run', () => {
+      const tool = makeTool({ name: 'Get-Run' });
+      toolRegistry.push(tool);
+
+      const defs = getToolDefinitions();
+      expect(defs[0].annotations).toEqual({
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      });
+    });
+
     it('adds readOnlyHint annotation to Claude-Gemini-Codex fallback', () => {
       const tool = makeTool({ name: 'Claude-Gemini-Codex' });
       toolRegistry.push(tool);

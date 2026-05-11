@@ -1,5 +1,9 @@
 import { spawn } from "child_process";
+import { mkdir, writeFile } from "fs/promises";
+import { randomUUID } from "crypto";
+import path from "path";
 import { ToolExecutionContext } from "../execution.js";
+import { getRunsDir } from "../service/paths.js";
 
 // Detect Windows platform for shell compatibility
 const isWindows = process.platform === "win32";
@@ -13,6 +17,16 @@ export type CommandExecutionFailureKind =
   | "failed"
   | "no-output";
 
+export type CommandErrorType =
+  | "RESOURCE_EXHAUSTED"
+  | "AUTH_ERROR"
+  | "MODEL_NOT_FOUND"
+  | "TIMEOUT"
+  | "SPAWN"
+  | "CANCELLED"
+  | "FAILED"
+  | "NO_OUTPUT";
+
 export class CommandExecutionError extends Error {
   constructor(
     public readonly kind: CommandExecutionFailureKind,
@@ -23,47 +37,134 @@ export class CommandExecutionError extends Error {
       exitCode?: number | null;
       stdout?: string;
       stderr?: string;
+      runId?: string;
     },
   ) {
-    super(message);
+    const errorType = mapKindToErrorType(kind, details.stderr || "", details.stdout || "");
+    const retryable = isRetryable(errorType);
+    const retryAfter = parseRetryAfter(details.stderr || "");
+
+    let finalMessage = message;
+    if (errorType === "MODEL_NOT_FOUND") {
+      finalMessage += " (Note: model IDs are tool-specific; ensure you are using a model ID supported by this specific CLI tool)";
+    }
+
+    const structured = {
+      status: details.exitCode ?? -1,
+      error_type: errorType,
+      retryable,
+      retry_after_seconds: retryAfter,
+      command: details.command,
+      args: redactArgsForLogging(details.args),
+      exit_code: details.exitCode,
+      stdout_tail: tail(details.stdout, 500),
+      stderr_tail: tail(details.stderr, 500),
+      run_id: details.runId
+    };
+
+    super(`${finalMessage}\n\n\`\`\`json\n${JSON.stringify(structured, null, 2)}\n\`\`\``);
     this.name = "CommandExecutionError";
+  }
+}
+
+function mapKindToErrorType(kind: CommandExecutionFailureKind, stderr: string, stdout: string): CommandErrorType {
+  if (kind === "timeout") return "TIMEOUT";
+  if (kind === "spawn") return "SPAWN";
+  if (kind === "cancelled") return "CANCELLED";
+  if (kind === "no-output") return "NO_OUTPUT";
+
+  const combined = (stderr + "\n" + stdout).toLowerCase();
+
+  if (combined.includes("resource_exhausted") ||
+      combined.includes("429") ||
+      combined.includes("model_capacity_exhausted") ||
+      combined.includes("no capacity available") ||
+      combined.includes("rate limit") ||
+      combined.includes("quota")) {
+    return "RESOURCE_EXHAUSTED";
+  }
+
+  if (combined.includes("auth") ||
+      combined.includes("invalid api key") ||
+      combined.includes("api_key_invalid") ||
+      combined.includes("unauthorized")) {
+    return "AUTH_ERROR";
+  }
+
+  if (combined.includes("model not found") || combined.includes("404")) {
+    return "MODEL_NOT_FOUND";
+  }
+
+  return "FAILED";
+}
+
+function isRetryable(type: CommandErrorType): boolean {
+  return type === "RESOURCE_EXHAUSTED" || type === "TIMEOUT";
+}
+
+function parseRetryAfter(stderr: string): number | null {
+  const match = stderr.match(/retry after (\d+)/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function tail(text: string | undefined, limit: number): string {
+  if (!text) return "";
+  const redacted = redactSensitiveText(text);
+  if (redacted.length <= limit) return redacted;
+  return "..." + redacted.slice(-limit);
+}
+
+async function recordRun(
+  runId: string,
+  command: string,
+  args: string[],
+  cwd: string | undefined,
+  status: string,
+  errorType: CommandErrorType | undefined,
+  exitCode: number | null | undefined,
+  stdout: string,
+  stderr: string
+) {
+  try {
+    const runsDir = getRunsDir();
+    await mkdir(runsDir, { recursive: true });
+
+    const runData = {
+      run_id: runId,
+      timestamp: new Date().toISOString(),
+      command,
+      args: redactArgsForLogging(args),
+      cwd: cwd || process.cwd(),
+      status,
+      error_type: errorType,
+      exit_code: exitCode,
+      stdout_tail: tail(stdout, 1000),
+      stderr_tail: tail(stderr, 1000),
+    };
+
+    await writeFile(path.join(runsDir, `${runId}.json`), JSON.stringify(runData, null, 2));
+  } catch (error) {
+    // Best effort, don't crash the command execution
   }
 }
 
 /**
  * Format a single argument for safe use with cmd.exe (shell: true on Windows).
  * Ensures the argument survives cmd.exe parsing as one argv entry.
- *
- * Rules:
- * - Empty strings → `""` (otherwise lost entirely)
- * - Args with whitespace or quotes → wrapped in double quotes
- *   - Inside quotes: `"` → `""`, `%` → `%%`
- *   - Trailing backslashes doubled (prevents `\"` escaping the closing quote)
- *   - Shell operators (&|<>^) are literal inside quotes — no caret needed
- * - Args without whitespace or quotes → unquoted
- *   - `%` → `%%`, shell operators get caret-escaped
  */
 export function sanitizeArgForCmd(arg: string): string {
   if (arg === '') return '""';
 
-  // Newlines act as command separators in cmd.exe even inside double quotes.
-  // Replace with spaces to preserve word boundaries safely.
   const sanitized = arg.replace(/[\r\n]+/g, ' ');
-
   const needsQuotes = /[\s"]/.test(sanitized);
 
   if (needsQuotes) {
-    // Inside double quotes: only % and " need escaping.
-    // Shell operators (&|<>^) are treated as literals by cmd.exe inside quotes.
-    // Trailing backslashes must be doubled so they don't escape the closing quote
-    // in the target process's CommandLineToArgvW parser.
     const escaped = sanitized
       .replace(/%/g, '%%')
       .replace(/"/g, '""')
       .replace(/\\+$/, m => m + m);
     return `"${escaped}"`;
   } else {
-    // Unquoted: escape % and caret-escape shell operators (including parentheses)
     return sanitized
       .replace(/%/g, '%%')
       .replace(/[&|<>^()]/g, c => `^${c}`);
@@ -82,7 +183,6 @@ function redactArgValueForLogging(flag: string, value: string): string {
   if (flag === '--header' || flag === '-H') {
     return redactSensitiveText(value);
   }
-
   return '[Redacted]';
 }
 
@@ -117,18 +217,9 @@ function redactArgsForLogging(args: string[]): string[] {
 
 function terminateWindowsProcessTree(pid: number, force: boolean) {
   const killArgs = ["/pid", String(pid), "/T"];
-  if (force) {
-    killArgs.push("/F");
-  }
-
-  const killer = spawn("taskkill", killArgs, {
-    stdio: ["ignore", "ignore", "ignore"],
-    shell: false,
-  });
-
-  killer.on("error", () => {
-    // Best effort cleanup only.
-  });
+  if (force) killArgs.push("/F");
+  const killer = spawn("taskkill", killArgs, { stdio: ["ignore", "ignore", "ignore"], shell: false });
+  killer.on("error", () => {});
 }
 
 function terminateChildProcess(pid: number, force: boolean) {
@@ -136,12 +227,9 @@ function terminateChildProcess(pid: number, force: boolean) {
     terminateWindowsProcessTree(pid, force);
     return;
   }
-
   try {
     process.kill(-pid, force ? "SIGKILL" : "SIGTERM");
-  } catch {
-    // Best effort cleanup only.
-  }
+  } catch {}
 }
 
 export async function executeCommand(
@@ -158,14 +246,15 @@ export async function executeCommand(
     env,
     logger,
   } = options;
+  const runId = randomUUID();
 
   return new Promise((resolve, reject) => {
-    // Use shell: true on Windows to properly execute .cmd files and resolve PATH.
-    // Sanitize args to prevent cmd.exe metacharacter injection.
     const safeArgs = isWindows ? args.map(sanitizeArgForCmd) : args;
     const loggedArgs = redactArgsForLogging(args);
     const loggedSafeArgs = redactArgsForLogging(safeArgs);
+
     logger?.info("command_spawn_requested", {
+      runId,
       command,
       args: loggedArgs,
       safeArgs: loggedSafeArgs,
@@ -177,6 +266,7 @@ export async function executeCommand(
       detached: !isWindows,
       envKeys: env ? Object.keys(env).sort() : undefined,
     });
+
     const childProcess = spawn(command, safeArgs, {
       cwd,
       env: env ?? process.env,
@@ -196,6 +286,7 @@ export async function executeCommand(
     let stderrChunkCount = 0;
 
     logger?.info("command_spawned", {
+      runId,
       command,
       args: loggedArgs,
       cwd,
@@ -203,57 +294,37 @@ export async function executeCommand(
     });
 
     const clearRequestTimer = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
-
     const clearTerminationTimer = () => {
-      if (forceKillTimeoutId) {
-        clearTimeout(forceKillTimeoutId);
-      }
+      if (forceKillTimeoutId) clearTimeout(forceKillTimeoutId);
     };
 
-    const abortListener = () => {
-        logger?.error("command_abort_signal_received", {
-          command,
-          args: loggedArgs,
-          cwd,
-          pid: childProcess.pid,
-          signalReason: signal?.reason,
-        });
-      beginTermination(
-        new CommandExecutionError(
-          "cancelled",
-          "Command cancelled",
-          {
-            command,
-            args: loggedArgs,
-            stdout: redactSensitiveText(stdout),
-            stderr: redactSensitiveText(stderr),
-          },
-        ),
-      );
-    };
-
-    const settle = (error?: Error, output?: string) => {
+    const settle = (error?: Error, output?: string, exitCode?: number | null) => {
       if (isSettled) return;
-
       isSettled = true;
       clearRequestTimer();
       signal?.removeEventListener("abort", abortListener);
 
-      if (error) {
-        reject(error);
-      } else {
-        resolve(output ?? "");
+      const status = error ? "failed" : "success";
+      let errorType: CommandErrorType | undefined;
+      if (error instanceof CommandExecutionError) {
+        errorType = mapKindToErrorType(error.kind, stderr, stdout);
+      } else if (error) {
+        errorType = "FAILED";
       }
+
+      void recordRun(runId, command, args, cwd, status, errorType, exitCode, stdout, stderr);
+
+      if (error) reject(error);
+      else resolve(output ?? "");
     };
 
     const beginTermination = (error: Error) => {
       if (!terminationStarted && childProcess.pid) {
         terminationStarted = true;
         logger?.error("command_termination_started", {
+          runId,
           command,
           args: loggedArgs,
           cwd,
@@ -265,6 +336,7 @@ export async function executeCommand(
         forceKillTimeoutId = setTimeout(() => {
           if (childProcess.pid) {
             logger?.error("command_termination_escalated", {
+              runId,
               command,
               args: loggedArgs,
               cwd,
@@ -275,8 +347,27 @@ export async function executeCommand(
           }
         }, killGraceMs);
       }
-
       settle(error);
+    };
+
+    const abortListener = () => {
+      logger?.error("command_abort_signal_received", {
+        runId,
+        command,
+        args: loggedArgs,
+        cwd,
+        pid: childProcess.pid,
+        signalReason: signal?.reason,
+      });
+      beginTermination(
+        new CommandExecutionError("cancelled", "Command cancelled", {
+          runId,
+          command,
+          args: loggedArgs,
+          stdout,
+          stderr,
+        }),
+      );
     };
 
     signal?.addEventListener("abort", abortListener, { once: true });
@@ -287,6 +378,7 @@ export async function executeCommand(
 
     if (timeoutMs && timeoutMs > 0) {
       logger?.debug("command_timeout_started", {
+        runId,
         command,
         args: loggedArgs,
         cwd,
@@ -294,6 +386,7 @@ export async function executeCommand(
       });
       timeoutId = setTimeout(() => {
         logger?.error("command_timeout_elapsed", {
+          runId,
           command,
           args: loggedArgs,
           cwd,
@@ -301,16 +394,13 @@ export async function executeCommand(
           timeoutMs,
         });
         beginTermination(
-          new CommandExecutionError(
-            "timeout",
-            `Command timed out after ${timeoutMs}ms`,
-            {
-              command,
-              args: loggedArgs,
-              stdout: redactSensitiveText(stdout),
-              stderr: redactSensitiveText(stderr),
-            },
-          ),
+          new CommandExecutionError("timeout", `Command timed out after ${timeoutMs}ms`, {
+            runId,
+            command,
+            args: loggedArgs,
+            stdout,
+            stderr,
+          }),
         );
       }, timeoutMs);
     }
@@ -322,6 +412,7 @@ export async function executeCommand(
       stdoutChunkCount += 1;
       const loggedChunk = redactSensitiveText(chunk);
       logger?.debug("command_stdout_chunk", {
+        runId,
         command,
         args: loggedArgs,
         cwd,
@@ -330,8 +421,6 @@ export async function executeCommand(
         chunkLength: chunk.length,
         chunk: loggedChunk,
       });
-
-      // Report new content if callback provided
       if (onProgress && stdout.length > lastReportedLength) {
         const newContent = stdout.substring(lastReportedLength);
         lastReportedLength = stdout.length;
@@ -339,8 +428,6 @@ export async function executeCommand(
       }
     });
 
-
-    // CLI level errors
     childProcess.stderr?.on("data", (data) => {
       if (isSettled) return;
       const chunk = data.toString();
@@ -348,6 +435,7 @@ export async function executeCommand(
       stderrChunkCount += 1;
       const loggedChunk = redactSensitiveText(chunk);
       logger?.debug("command_stderr_chunk", {
+        runId,
         command,
         args: loggedArgs,
         cwd,
@@ -356,9 +444,9 @@ export async function executeCommand(
         chunkLength: chunk.length,
         chunk: loggedChunk,
       });
-
-      if (stderr.includes("RESOURCE_EXHAUSTED")) {
+      if (mapKindToErrorType("failed", stderr, stdout) === "RESOURCE_EXHAUSTED") {
         logger?.error("command_quota_exhausted", {
+          runId,
           command,
           args: loggedArgs,
           cwd,
@@ -368,23 +456,20 @@ export async function executeCommand(
         beginTermination(
           new CommandExecutionError(
             "quota",
-            `Command failed due to quota exhaustion: ${redactSensitiveText(stderr).trim()}`,
-            {
-              command,
-              args: loggedArgs,
-              stdout: redactSensitiveText(stdout),
-              stderr: redactSensitiveText(stderr),
-            },
+            `Quota exhausted: ${redactSensitiveText(stderr).trim()}`,
+            { runId, command, args: loggedArgs, stdout, stderr },
           ),
         );
       }
     });
+
     childProcess.on("error", (error) => {
       if (!isSettled) {
         clearRequestTimer();
         clearTerminationTimer();
         signal?.removeEventListener("abort", abortListener);
         logger?.error("command_spawn_failed", {
+          runId,
           command,
           args: loggedArgs,
           cwd,
@@ -392,25 +477,24 @@ export async function executeCommand(
           error,
         });
         settle(
-          new CommandExecutionError(
-            "spawn",
-            `Failed to spawn command: ${error.message}`,
-            {
-              command,
-              args: loggedArgs,
-              stdout: redactSensitiveText(stdout),
-              stderr: redactSensitiveText(stderr),
-            },
-          ),
+          new CommandExecutionError("spawn", `Failed to spawn command: ${error.message}`, {
+            runId,
+            command,
+            args: loggedArgs,
+            stdout,
+            stderr,
+          }),
         );
       }
     });
+
     childProcess.on("close", (code) => {
       clearRequestTimer();
       clearTerminationTimer();
       signal?.removeEventListener("abort", abortListener);
 
-       logger?.info("command_closed", {
+      logger?.info("command_closed", {
+        runId,
         command,
         args: loggedArgs,
         cwd,
@@ -431,6 +515,7 @@ export async function executeCommand(
         const output = stdout.trim();
         if (output || !stderr.trim()) {
           logger?.info("command_completed", {
+            runId,
             command,
             args: loggedArgs,
             cwd,
@@ -439,11 +524,12 @@ export async function executeCommand(
             resultKind: "success",
             outputLength: output.length,
           });
-          settle(undefined, output);
+          settle(undefined, output, code);
           return;
         }
 
         logger?.error("command_completed_without_stdout", {
+          runId,
           command,
           args: loggedArgs,
           cwd,
@@ -455,22 +541,20 @@ export async function executeCommand(
           new CommandExecutionError(
             "no-output",
             `Command produced no output. stderr: ${redactSensitiveText(stderr).trim()}`,
-            {
-              command,
-              args: loggedArgs,
-              exitCode: code,
-              stdout: redactSensitiveText(stdout),
-              stderr: redactSensitiveText(stderr),
-            },
+            { runId, command, args: loggedArgs, exitCode: code, stdout, stderr },
           ),
+          undefined,
+          code,
         );
         return;
       }
 
+      const exhausted = mapKindToErrorType("failed", stderr, stdout) === "RESOURCE_EXHAUSTED";
       const redactedStdout = redactSensitiveText(stdout);
       const redactedStderr = redactSensitiveText(stderr);
       const errorMessage = redactedStderr.trim() || "Unknown error";
       logger?.error("command_failed", {
+        runId,
         command,
         args: loggedArgs,
         cwd,
@@ -481,16 +565,14 @@ export async function executeCommand(
       });
       settle(
         new CommandExecutionError(
-          stderr.includes("RESOURCE_EXHAUSTED") ? "quota" : "failed",
-          `Command failed with exit code ${code}: ${errorMessage}`,
-          {
-            command,
-            args: loggedArgs,
-            exitCode: code,
-            stdout: redactedStdout,
-            stderr: redactedStderr,
-          },
+          exhausted ? "quota" : "failed",
+          exhausted
+            ? `Quota exhausted: ${redactedStderr.trim()}`
+            : `Command failed with code ${code}: ${errorMessage}`,
+          { runId, command, args: loggedArgs, exitCode: code, stdout, stderr },
         ),
+        undefined,
+        code,
       );
     });
   });

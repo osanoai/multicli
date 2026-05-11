@@ -8,6 +8,14 @@ export const SERVICE_LABEL = 'com.osanoai.multicli';
 export const SYSTEMD_UNIT_NAME = 'multicli.service';
 export const WINDOWS_TASK_NAME = 'MultiCLI';
 
+export function getMulticliDir(): string {
+  return path.join(os.homedir(), '.multicli');
+}
+
+export function getRunsDir(): string {
+  return path.join(getMulticliDir(), 'runs');
+}
+
 export function getServiceKind(
   platform: NodeJS.Platform = process.platform,
 ): ServiceKind {

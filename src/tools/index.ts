@@ -9,6 +9,7 @@ import { fetchChunkTool } from './fetch-chunk.tool.js';
 import { askCodexTool } from './ask-codex.tool.js';
 import { askClaudeTool } from './ask-claude.tool.js';
 import { askOpencodeTool } from './ask-opencode.tool.js';
+import { getRunTool } from './get-run.tool.js';
 import { detectAvailableClis, CliAvailability } from '../utils/cliDetector.js';
 import { MultiCliConfig } from '../config.js';
 import type { Logger } from '../logger.js';
@@ -25,6 +26,8 @@ export async function initTools(
     config?.cliDetectTimeoutMs,
     config?.logger,
   );
+
+  toolRegistry.push(getRunTool);
 
   if (availability.gemini) {
     toolRegistry.push(
