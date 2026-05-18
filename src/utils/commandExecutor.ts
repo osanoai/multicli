@@ -1,9 +1,79 @@
 import { spawn } from "child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { ToolExecutionContext } from "../execution.js";
 
 // Detect Windows platform for shell compatibility
 const isWindows = process.platform === "win32";
 const SENSITIVE_VALUE_FLAGS = new Set(['--header', '-H', '--token', '--api-key', '--apikey', '--auth-token']);
+
+const CREATE_PROCESS_AS_USER_W_FAILURE = 'CreateProcessAsUserW failed: 5';
+
+export interface ExecuteCommandOptions extends ToolExecutionContext {
+  /**
+   * Codex-only opt-in on Windows (issue #138).
+   * When true AND running on Windows AND the command resolves to an .exe on PATH,
+   * spawn with shell:false + detached:true + windowsHide:true to bypass cmd.exe wrapping.
+   * Falls back silently to the default shell:true path for .cmd/.bat or unresolved commands.
+   * Only `executeCodexCLI` should set this.
+   */
+  windowsCodexNoShell?: boolean;
+}
+
+/**
+ * Resolve a bare command (e.g. "codex") to an absolute executable path on Windows,
+ * walking %PATH% × %PATHEXT% in deterministic order — same order semantics as `where`.
+ * Returns { path, isCmd } where isCmd marks .cmd/.bat shims that must NOT take the
+ * direct shell:false spawn path (Node CVE-2024-27980 / arg-quoting safety).
+ */
+export function resolveWindowsExecutable(command: string): { path: string; isCmd: boolean } | null {
+  if (process.platform !== "win32") return null;
+
+  const hasExt = /\.[a-zA-Z0-9]+$/.test(command);
+  const hasSep = /[\\/]/.test(command);
+
+  const pathDirs = (process.env.PATH ?? '').split(';').filter(Boolean);
+  // Lower-case PATHEXT for deterministic, case-insensitive candidate paths.
+  // Windows filesystem is case-insensitive, so this does not affect actual file lookup.
+  const pathExt = (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD')
+    .split(';')
+    .filter(Boolean)
+    .map((ext) => ext.toLowerCase());
+
+  const candidates: string[] = [];
+
+  if (hasSep) {
+    if (hasExt) {
+      candidates.push(command);
+    } else {
+      for (const ext of pathExt) candidates.push(command + ext);
+    }
+  } else {
+    for (const dir of pathDirs) {
+      if (hasExt) {
+        candidates.push(path.join(dir, command));
+      } else {
+        for (const ext of pathExt) {
+          candidates.push(path.join(dir, command + ext));
+        }
+      }
+    }
+  }
+
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        const lower = candidate.toLowerCase();
+        const isCmd = lower.endsWith('.cmd') || lower.endsWith('.bat');
+        return { path: candidate, isCmd };
+      }
+    } catch {
+      // ignore stat errors on inaccessible candidates
+    }
+  }
+
+  return null;
+}
 
 export type CommandExecutionFailureKind =
   | "cancelled"
@@ -147,7 +217,7 @@ function terminateChildProcess(pid: number, force: boolean) {
 export async function executeCommand(
   command: string,
   args: string[],
-  options: ToolExecutionContext = {},
+  options: ExecuteCommandOptions = {},
 ): Promise<string> {
   const {
     onProgress,
@@ -157,32 +227,52 @@ export async function executeCommand(
     cwd,
     env,
     logger,
+    windowsCodexNoShell,
   } = options;
 
   return new Promise((resolve, reject) => {
-    // Use shell: true on Windows to properly execute .cmd files and resolve PATH.
-    // Sanitize args to prevent cmd.exe metacharacter injection.
-    const safeArgs = isWindows ? args.map(sanitizeArgForCmd) : args;
+    // Evaluate platform at call time so tests can stub process.platform.
+    const isWindowsRuntime = process.platform === "win32";
+    // Codex-only Windows opt-in (#138): when the env flag is set AND command resolves
+    // to a real .exe on PATH, bypass cmd.exe and spawn the .exe directly with
+    // shell:false + detached:true + windowsHide:true. For .cmd/.bat shims or any
+    // resolution failure, fall back silently to the default shell:true path so
+    // arg-quoting safety + Node CVE-2024-27980 hardening are preserved.
+    const noShellRequested = isWindowsRuntime && windowsCodexNoShell === true;
+    const resolved = noShellRequested ? resolveWindowsExecutable(command) : null;
+    const noShellActive = !!(resolved && !resolved.isCmd);
+
+    const spawnCommand = noShellActive ? resolved!.path : command;
+    const spawnShell = noShellActive ? false : isWindowsRuntime;
+    const spawnDetached = noShellActive ? true : !isWindowsRuntime;
+    const spawnArgs = noShellActive ? args : (isWindowsRuntime ? args.map(sanitizeArgForCmd) : args);
+
     const loggedArgs = redactArgsForLogging(args);
-    const loggedSafeArgs = redactArgsForLogging(safeArgs);
+    const loggedSpawnArgs = redactArgsForLogging(spawnArgs);
     logger?.info("command_spawn_requested", {
       command,
+      spawnCommand,
       args: loggedArgs,
-      safeArgs: loggedSafeArgs,
+      safeArgs: loggedSpawnArgs,
       cwd,
       timeoutMs,
       killGraceMs,
       platform: process.platform,
-      shell: isWindows,
-      detached: !isWindows,
+      shell: spawnShell,
+      detached: spawnDetached,
+      windowsCodexNoShell: noShellRequested,
+      resolvedCommand: resolved?.path ?? null,
+      resolvedIsCmd: resolved?.isCmd ?? null,
+      effectiveShell: spawnShell,
       envKeys: env ? Object.keys(env).sort() : undefined,
     });
-    const childProcess = spawn(command, safeArgs, {
+    const childProcess = spawn(spawnCommand, spawnArgs, {
       cwd,
       env: env ?? process.env,
-      shell: isWindows,
+      shell: spawnShell,
       stdio: ["ignore", "pipe", "pipe"],
-      detached: !isWindows,
+      detached: spawnDetached,
+      ...(noShellActive ? { windowsHide: true } : {}),
     });
 
     let stdout = "";
@@ -429,6 +519,46 @@ export async function executeCommand(
 
       if (code === 0) {
         const output = stdout.trim();
+
+        // R3 (#138): Codex graceful-folds the Windows token-launch failure into
+        // an exit-0 result. Detect the marker BEFORE the (output || !stderr.trim())
+        // gate so the hint is surfaced even when stdout is empty and stderr alone
+        // carries the marker. Single-note guarantee + empty-output guarantee.
+        if (isWindowsRuntime) {
+          const redactedStdoutLocal = redactSensitiveText(stdout);
+          const redactedStderrLocal = redactSensitiveText(stderr);
+          const markerFound =
+            redactedStdoutLocal.includes(CREATE_PROCESS_AS_USER_W_FAILURE) ||
+            redactedStderrLocal.includes(CREATE_PROCESS_AS_USER_W_FAILURE);
+          if (markerFound) {
+            const cause = "Codex exited 0 but reported a Windows token-launch failure (CreateProcessAsUserW failed: 5).";
+            // Three-state action wording (#138 R3 follow-up):
+            //   flag OFF                       → "try setting"
+            //   flag ON + .exe resolved        → bypass attempted, failure is upstream
+            //   flag ON + .cmd-only (fallback) → flag set but bypass could not activate
+            const noShellActiveLocal = !!(resolved && !resolved.isCmd);
+            const action = noShellRequested
+              ? (noShellActiveLocal
+                ? "MULTICLI_WINDOWS_CODEX_NO_SHELL=1 is already active but the failure persists — this likely needs an upstream Codex fix."
+                : "MULTICLI_WINDOWS_CODEX_NO_SHELL=1 is set, but the bypass could not activate because codex.exe is not on PATH (only codex.cmd resolved). Install a build of Codex that exposes codex.exe, or stay on Tier 1.")
+              : "Try setting MULTICLI_WINDOWS_CODEX_NO_SHELL=1. The workaround only takes effect when codex.exe is on PATH; npm-global installs that expose only codex.cmd will remain affected.";
+            const hintBody = `${cause} ${action} See https://github.com/osanoai/multicli/issues/138.`;
+            const note = `---\n[multicli] note: ${hintBody}`;
+            const finalOutput = output ? `${output}\n\n${note}` : note;
+            logger?.info("command_completed", {
+              command,
+              args: loggedArgs,
+              cwd,
+              pid: childProcess.pid,
+              exitCode: code,
+              resultKind: "success_with_issue138_note",
+              outputLength: finalOutput.length,
+            });
+            settle(undefined, finalOutput);
+            return;
+          }
+        }
+
         if (output || !stderr.trim()) {
           logger?.info("command_completed", {
             command,
@@ -469,7 +599,24 @@ export async function executeCommand(
 
       const redactedStdout = redactSensitiveText(stdout);
       const redactedStderr = redactSensitiveText(stderr);
-      const errorMessage = redactedStderr.trim() || "Unknown error";
+      let errorMessage = redactedStderr.trim() || "Unknown error";
+
+      // Issue #138: surface a known-Windows-issue hint when Codex's internal
+      // child spawn fails with CreateProcessAsUserW failed: 5. Codex may emit
+      // this string on either stream, so check both after redaction.
+      if (
+        isWindowsRuntime &&
+        (redactedStdout.includes(CREATE_PROCESS_AS_USER_W_FAILURE) ||
+          redactedStderr.includes(CREATE_PROCESS_AS_USER_W_FAILURE))
+      ) {
+        // Three-state hint wording (#138 R3 follow-up), parallel to success-path logic above.
+        const noShellActiveErr = !!(resolved && !resolved.isCmd);
+        errorMessage += noShellRequested
+          ? (noShellActiveErr
+            ? " (multicli hint: known Windows issue #138 — MULTICLI_WINDOWS_CODEX_NO_SHELL=1 workaround was already attempted; this likely needs an upstream Codex fix)"
+            : " (multicli hint: known Windows issue #138 — MULTICLI_WINDOWS_CODEX_NO_SHELL=1 is set, but the bypass could not activate because codex.exe is not on PATH; only codex.cmd resolved)")
+          : " (multicli hint: known Windows issue, see https://github.com/osanoai/multicli/issues/138 — try setting MULTICLI_WINDOWS_CODEX_NO_SHELL=1)";
+      }
       logger?.error("command_failed", {
         command,
         args: loggedArgs,

@@ -334,6 +334,17 @@ Helpful service commands:
 - `multicli service refresh`
 - `multicli service uninstall`
 
+**Windows: `Ask-Codex` reports `CreateProcessAsUserW failed: 5` (issue [#138](https://github.com/osanoai/multicli/issues/138))**
+If `Ask-Codex` returns errors or `[multicli] note` blocks mentioning `CreateProcessAsUserW failed: 5`, this is a Windows-only issue where Codex's internal shell subprocess fails when spawned via multicli's MCP host.
+
+**Workaround (best-effort):**
+1. Ensure **`codex.exe`** is on your `PATH` / `PATHEXT`. This is a hard requirement: the workaround skips silently for `codex.cmd` npm shims because Node's safe no-shell execution requires a real `.exe` resolution (Node CVE-2024-27980 hardening forbids direct `.cmd`/`.bat` spawn without shell wrapping).
+2. Set the environment variable `MULTICLI_WINDOWS_CODEX_NO_SHELL=1` in your MCP server config and restart your host (Claude Code, etc.).
+
+If only `codex.cmd` is available on PATH, the workaround is **not applied** — multicli falls back to the default `shell:true` path for safety, and the failure will persist. In that case multicli surfaces a `[multicli] note` in the tool output (or hint in the error message) pointing here.
+
+A deeper bypass that parses `codex.cmd` and spawns `node.exe` directly is tracked as a future experiment, not part of this release.
+
 **Need to tune timeouts or cleanup behavior?**
 Multi-CLI supports these optional environment variables:
 
