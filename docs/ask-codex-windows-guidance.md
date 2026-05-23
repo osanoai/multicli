@@ -1,7 +1,7 @@
 # Ask-Codex on Windows — 다른 프로젝트의 Claude를 위한 가이드
 
 > 작성: 2026-05-23 · multicli (osanoai/multicli)
-> 검증 패킷: `tmp/R-20260523-134247-9zl-...` (5.3/5.4), `tmp/R-20260523-141040-gpt55-test/` (5.5), 인터랙티브 세션 (5.3 텍스트 전용)
+> 검증 패킷: `tmp/R-20260523-134247-9zl-...` (5.3/5.4), `tmp/R-20260523-141040-gpt55-test/` (5.5 vanilla), `tmp/R-20260523-144800-e5b-wrapper-verify/` (5.5 wrapper 경유), 인터랙티브 세션 (5.3 텍스트 전용)
 > 대상: multicli MCP 서버의 `Ask-Codex` 도구를 호출하는 다른 프로젝트의 Claude (또는 사람) — 0 컨텍스트에서 읽고 바로 행동 가능
 
 ## TL;DR — 즉시 적용할 권장사항
@@ -49,8 +49,10 @@ Windows 에서 Ask-Codex 는 두 단계로 프로세스를 spawn 한다:
 | 2 | 13:44 | `gpt-5.4`       | multicli Ask-Codex   | PASS   | `codex-rw-evidence-attempt2.txt` 4줄 정확 |
 | 3 | 14:11 | `gpt-5.5`       | vanilla `codex exec`*| PASS   | `proof-5.5.txt` 2줄 정확. raw-stdout 에 회복 분기 흐름 (PS fail → node_repl → apply_patch) 명시 캡처 |
 | 4 | 14:29 | `gpt-5.3-codex` | 인터랙티브 (텍스트만)| PASS   | 텍스트 전용 리뷰어 역할 수행 정상 |
+| 5 | 14:48 | `gpt-5.5`       | multicli Ask-Codex** | PASS   | `proof-5.5-wrapper.txt` 2줄 정확. 3-path dist catalog 워크어라운드 + 새 세션 MCP 재기동 경유 |
 
-*: multicli 의 model allowlist 가 5.5 미포함이라 vendor codex 직호출. 5.5 catalog 등재는 별도 작업 (bd `multicli-0v5`).
+*: multicli 의 model allowlist 가 5.5 미포함이라 vendor codex 직호출 (당시).
+**: PL 환경 3-path dist (`<root>/dist/`, npm-global, npx-cache) 의 `modelCatalog.generated.json` 에 gpt-5.5 를 codex powerful tier 로 in-place 추가한 워크어라운드 적용 상태에서 검증. src/ 는 미패치 — 정식 catalog 등재는 별도 작업 (bd `multicli-0v5`).
 
 검증 환경: Windows 11 (10.0.26200), codex-cli 0.133.0, Claude Code fresh session.
 
@@ -96,13 +98,15 @@ mcp__Multi-CLI__Ask-Codex({
 - multicli 1.5.40 (또는 그 이상) 정식 릴리스 후 — launcher-mimick 이 표준 패키지에 포함되어 manual patch 가 불필요해진다.
 - codex CLI vendor 가 5.3-codex 에도 회복 분기를 백포팅 — bd `multicli-767` 가 해소되면 5.3-codex 도 도구 호출 작업 안전 영역으로 옮길 수 있다.
 - 다른 OS (macOS/Linux) — 본 가이드의 두 실패 모드는 Windows 한정이다.
-- gpt-5.5 가 multicli catalog 에 정식 등재 (bd `multicli-0v5` Probe 통과) — vanilla codex 직호출 우회가 불필요해진다.
+- gpt-5.5 가 multicli catalog 에 정식 등재 (bd `multicli-0v5` Probe 통과) — vanilla codex 직호출 + 3-path dist in-place 워크어라운드가 모두 불필요해진다.
+  - 현재 상태: PL 환경 한정으로 3-path dist 워크어라운드가 적용돼 wrapper 경유 5.5 가 사용 가능 (bd `multicli-e5b` PASS). 다른 머신에서는 아직 5.5 가 allowlist 거부됨.
 
 ## 참고
 
 - PR: https://github.com/osanoai/multicli/pull/139
 - GitHub issue: https://github.com/osanoai/multicli/issues/138
-- bd issues: `multicli-ncj` (PR 트래킹), `multicli-767` (5.3-codex 회복 분기 결손 follow-up), `multicli-9zl` (5.3/5.4 검증, closed), `multicli-0v5` (5.5 catalog 등재)
+- bd issues: `multicli-ncj` (PR 트래킹), `multicli-767` (5.3-codex 회복 분기 결손 follow-up), `multicli-9zl` (5.3/5.4 검증, closed), `multicli-0v5` (5.5 catalog 정식 등재), `multicli-e5b` (5.5 wrapper 경유 검증, closed)
 - 검증 패킷:
   - `tmp/R-20260523-134247-9zl-launcher-mimick-verification/SUMMARY.md` (5.3 FAIL, 5.4 PASS)
-  - `tmp/R-20260523-141040-gpt55-test/SUMMARY.md` (5.5 PASS + 변곡점 본질 분석)
+  - `tmp/R-20260523-141040-gpt55-test/SUMMARY.md` (5.5 vanilla PASS + 변곡점 본질 분석)
+  - `tmp/R-20260523-144800-e5b-wrapper-verify/SUMMARY.md` (5.5 wrapper 경유 PASS — 3-path dist 워크어라운드 실효 확인)
