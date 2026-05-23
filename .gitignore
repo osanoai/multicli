@@ -35,6 +35,7 @@ logs/
 # Temporary files
 *.tmp
 .cache/
+tmp/
 
 # Agents
 .claude
