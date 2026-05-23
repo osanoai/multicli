@@ -6,6 +6,21 @@ This file provides guidance to Claude Code, Google Gemini, OpenAI Codex, and oth
 
 Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claude, Gemini, Codex) call each other as tools. Built with TypeScript and the `@modelcontextprotocol/sdk`. Runs over stdio transport. Published to npm as `@osanoai/multicli`.
 
+## Session Start (Project Entrypoint)
+
+세션 시작 시 **git / bd / memory** 셋을 목적에 따라 분리해서 읽는다. 셋의 역할이 중첩되면 stale 가 누적되고 진입이 느려진다.
+
+1. **git** — 코드/브랜치 상태. `git status`, `git log --oneline -5`, 현재 브랜치 확인. PR 상태는 `gh pr list` / `gh pr view <N> --json state,mergeable,mergeStateStatus`.
+2. **bd** (`.beads/`) — **actionable project state 의 1차 정본**. 진입점은 `bd ready` (차단 없는 다음 작업 큐). 추가 조회: `bd list`, `bd show <id>`, `bd dep tree <id>`. GitHub 이슈/PR 은 `--external-ref gh-NNN` 으로 양방향 연결. 작업 종류는 type 필드로 구분 (`bug|feature|task|epic|chore|decision`).
+3. **memory** (Claude Code: `~/.claude/projects/.../memory/MEMORY.md` + entries / 다른 에이전트는 각자 상응 시스템) — durable operating principles + cross-session preferences. 근본 원인 분석, 명명/배포 컨벤션, 사용자 역할·응답 톤, 참조 경로. **live status 는 담지 않는다** (실증: 메모리에 PR 상태를 적은 항목이 4일 만에 stale 화됨).
+
+**분할 축은 콘텐츠 유형**:
+- WHY/HOW/WHERE/WHO (분석, 컨벤션, 참조, 사용자 선호) → memory
+- WHAT/WHEN/STATUS (열린 작업, 상태 전이, 의존, 마감) → bd
+- 같은 토픽도 두 곳에 나뉠 수 있다. memory → bd 는 ID 인용 (예: `bd 트래킹: multicli-ncj`) 허용. bd 의 status 를 memory 에 복제 금지.
+
+다음 작업 선택은 항상 `bd ready` 결과 우선. memory 는 분석 참조용으로 호출한다.
+
 ## Workflow Orchestration
 
 ### 1. Plan Mode Default
