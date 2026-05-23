@@ -97,6 +97,45 @@ describe('formatCatalog', () => {
 // tierConfig
 // ===========================================================================
 
+// ===========================================================================
+// codex catalog drift detect (R1 — plan-review 합의 2026-05-21)
+//
+// 본 snapshot 은 generator (npm run refresh-catalog) 출력의 stable baseline.
+// codex CLI 가 신규 모델을 노출하면 generator 가 새 ID 를 추가하여 이 assert
+// 가 fail 한다. fail 시 절차:
+//   1. AGENTS.md "Model Catalog Maintenance" 절 6단계 체크리스트 수행
+//   2. PR 본문에 신규 모델 ID 풀 명시 + 본 snapshot 갱신
+//
+// 누락 케이스(예: gpt-5.5 가 openai/codex models.json 에 있는데
+// `npm run refresh-catalog` PROBE 단계에서 ChatGPT 계정 비호환으로 reject)도
+// 본 snapshot 으로 발견 가능 — 신규 ID 가 들어오면 fail.
+// ===========================================================================
+
+describe('codex catalog drift detect (R1)', () => {
+  it('codex 모델 풀이 4종 stable baseline 과 일치한다', () => {
+    const catalog = getCatalog('codex');
+    const allModels = catalog.tiers.flatMap(t => t.models).sort();
+    expect(allModels).toEqual([
+      'gpt-5.2',
+      'gpt-5.3-codex',
+      'gpt-5.4',
+      'gpt-5.4-mini',
+    ]);
+  });
+
+  it('codex tier 분배가 stable baseline 과 일치한다', () => {
+    const catalog = getCatalog('codex');
+    const tierMap = Object.fromEntries(
+      catalog.tiers.map(t => [t.tier, [...t.models].sort()])
+    );
+    expect(tierMap).toEqual({
+      fast: ['gpt-5.4-mini'],
+      balanced: ['gpt-5.2', 'gpt-5.3-codex'],
+      powerful: ['gpt-5.4'],
+    });
+  });
+});
+
 describe('tierConfig', () => {
   const clis = ['claude', 'gemini', 'codex'] as const;
   const tiers = ['fast', 'balanced', 'powerful'] as const;

@@ -16,8 +16,27 @@ export interface ExecuteCommandOptions extends ToolExecutionContext {
    * spawn with shell:false + detached:true + windowsHide:true to bypass cmd.exe wrapping.
    * Falls back silently to the default shell:true path for .cmd/.bat or unresolved commands.
    * Only `executeCodexCLI` should set this.
+   *
+   * Deprecated in favor of `codexLauncherMimick` (issue #138 follow-up). When both are
+   * set, `codexLauncherMimick` wins — this flag becomes a no-op.
    */
   windowsCodexNoShell?: boolean;
+  /**
+   * Codex launcher mimick context (issue #138 follow-up).
+   * When present, spawn the resolved native codex binary directly with the
+   * exact shape codex's internal sandbox setup requires:
+   *   shell:false + detached:false + stdio:pipe + env with codex-path on PATH +
+   *   CODEX_MANAGED_BY_NPM=1 + CODEX_MANAGED_PACKAGE_ROOT.
+   * Empirically isolated as the only spawn shape that lets codex's child
+   * shell launch succeed on Windows (tmp/R-20260523-085500-tier2-launcher-audit.md).
+   * Only `executeCodexCLI` should set this. windowsHide is intentionally NOT applied
+   * to match docs/codex.js launcher exactly.
+   */
+  codexLauncherMimick?: {
+    binaryPath: string;
+    env: NodeJS.ProcessEnv;
+    pathDir: string;
+  };
 }
 
 /**
@@ -230,22 +249,32 @@ export async function executeCommand(
     windowsCodexNoShell,
   } = options;
 
+  const launcherMimick = options.codexLauncherMimick;
+
   return new Promise((resolve, reject) => {
     // Evaluate platform at call time so tests can stub process.platform.
     const isWindowsRuntime = process.platform === "win32";
-    // Codex-only Windows opt-in (#138): when the env flag is set AND command resolves
-    // to a real .exe on PATH, bypass cmd.exe and spawn the .exe directly with
-    // shell:false + detached:true + windowsHide:true. For .cmd/.bat shims or any
-    // resolution failure, fall back silently to the default shell:true path so
-    // arg-quoting safety + Node CVE-2024-27980 hardening are preserved.
+    // codexLauncherMimick (issue #138 follow-up) takes precedence over the
+    // legacy windowsCodexNoShell branch. When mimick is active, the
+    // windowsCodexNoShell flag becomes a no-op (still logged for diagnostic).
+    const mimickActive = !!launcherMimick;
+    // Codex-only Windows opt-in (#138 original): legacy diagnostic path —
+    // when the env flag is set AND command resolves to a real .exe on PATH,
+    // bypass cmd.exe and spawn the .exe directly with shell:false +
+    // detached:true + windowsHide:true. Superseded by codexLauncherMimick.
     const noShellRequested = isWindowsRuntime && windowsCodexNoShell === true;
-    const resolved = noShellRequested ? resolveWindowsExecutable(command) : null;
-    const noShellActive = !!(resolved && !resolved.isCmd);
+    const resolved = !mimickActive && noShellRequested ? resolveWindowsExecutable(command) : null;
+    const noShellActive = !mimickActive && !!(resolved && !resolved.isCmd);
 
-    const spawnCommand = noShellActive ? resolved!.path : command;
-    const spawnShell = noShellActive ? false : isWindowsRuntime;
-    const spawnDetached = noShellActive ? true : !isWindowsRuntime;
-    const spawnArgs = noShellActive ? args : (isWindowsRuntime ? args.map(sanitizeArgForCmd) : args);
+    const spawnCommand = mimickActive
+      ? launcherMimick.binaryPath
+      : (noShellActive ? resolved!.path : command);
+    const spawnShell = mimickActive ? false : (noShellActive ? false : isWindowsRuntime);
+    const spawnDetached = mimickActive ? false : (noShellActive ? true : !isWindowsRuntime);
+    const spawnArgs = mimickActive
+      ? args
+      : (noShellActive ? args : (isWindowsRuntime ? args.map(sanitizeArgForCmd) : args));
+    const spawnEnv = mimickActive ? launcherMimick.env : (env ?? process.env);
 
     const loggedArgs = redactArgsForLogging(args);
     const loggedSpawnArgs = redactArgsForLogging(spawnArgs);
@@ -261,18 +290,22 @@ export async function executeCommand(
       shell: spawnShell,
       detached: spawnDetached,
       windowsCodexNoShell: noShellRequested,
-      resolvedCommand: resolved?.path ?? null,
+      codexLauncherMimick: mimickActive,
+      resolvedCommand: mimickActive ? launcherMimick.binaryPath : (resolved?.path ?? null),
       resolvedIsCmd: resolved?.isCmd ?? null,
       effectiveShell: spawnShell,
-      envKeys: env ? Object.keys(env).sort() : undefined,
+      envKeys: spawnEnv ? Object.keys(spawnEnv).sort() : undefined,
     });
     const childProcess = spawn(spawnCommand, spawnArgs, {
       cwd,
-      env: env ?? process.env,
+      env: spawnEnv,
       shell: spawnShell,
       stdio: ["ignore", "pipe", "pipe"],
       detached: spawnDetached,
-      ...(noShellActive ? { windowsHide: true } : {}),
+      // windowsHide intentionally NOT set for mimickActive — docs/codex.js
+      // launcher does not set it and our 3-round diagnostic isolated
+      // windowsHide:true as part of the failed Variant B shape.
+      ...(noShellActive && !mimickActive ? { windowsHide: true } : {}),
     });
 
     let stdout = "";

@@ -84,6 +84,21 @@ Multi-CLI — an MCP (Model Context Protocol) server that lets AI clients (Claud
 - `npm run prepublishOnly` — safety reminder + build before publish
 - `npm run prepare` — install Husky git hooks (`husky || true`)
 
+## Model Catalog Maintenance
+
+When OpenAI Codex (or any wrapped CLI) releases new model IDs (e.g. `gpt-5.5`), update `src/modelCatalog.generated.json` so Ask-Codex's whitelist validation accepts them. The catalog is the single source of truth for the schema-level allowlist that prevents LLM hallucination of model IDs.
+
+Procedure (Codex case; analogous for claude/gemini):
+
+1. **Capture authoritative IDs** — run both `codex --help` (CLI options + global flags) and `codex` (interactive TUI, then `/model`) and record the full model ID list.
+2. **Regenerate catalog** — `npm run refresh-catalog`. The generator (`scripts/refresh-catalog.ts`) clones `openai/codex` and probes each ID via `codex exec -m <id>`. PROBE-rejected IDs (e.g. ChatGPT-account-incompatible models) will not be written into the catalog.
+3. **Cross-check** — diff the codex section of `src/modelCatalog.generated.json` against step 1's ID list. Record any PROBE-rejected IDs and their reason (e.g. `invalid_request_error: model not supported when using Codex with a ChatGPT account`).
+4. **Run catalog tests** — `npm test -- tests/refreshCatalog.test.ts tests/modelCatalog.test.ts`. The drift-detect snapshot in `tests/modelCatalog.test.ts` (`codex catalog drift detect (R1)`) must be updated alongside any genuine ID-pool change.
+5. **Verify schema description sync** — `npm test -- tests/tools/ask-codex.tool.test.ts`. The Ask-Codex tool's zodSchema `model` description auto-syncs from the catalog; this test confirms allowlist propagation.
+6. **PR body** — list the new model ID pool in the PR description for review traceability.
+
+Reference incident (2026-05-21): LLM-generated `gpt-5.3` (an abbreviation of `gpt-5.3-codex`) was silently turning into `invalid_request_error` from codex because no schema-level allowlist existed. Plan-review rounds R1–R3 (archived under `tmp/archive/2026-05/`) introduced the catalog-backed validation pattern documented here.
+
 ## Testing
 
 - `npm test` — run all tests (`vitest run`)

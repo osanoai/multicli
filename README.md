@@ -334,16 +334,32 @@ Helpful service commands:
 - `multicli service refresh`
 - `multicli service uninstall`
 
-**Windows: `Ask-Codex` reports `CreateProcessAsUserW failed: 5` (issue [#138](https://github.com/osanoai/multicli/issues/138))**
-If `Ask-Codex` returns errors or `[multicli] note` blocks mentioning `CreateProcessAsUserW failed: 5`, this is a Windows-only issue where Codex's internal shell subprocess fails when spawned via multicli's MCP host.
+**Windows: `Ask-Codex` reports `CreateProcessAsUserW failed: 5` or `windows sandbox: spawn setup refresh` (issue [#138](https://github.com/osanoai/multicli/issues/138))**
 
-**Workaround (best-effort):**
-1. Ensure **`codex.exe`** is on your `PATH` / `PATHEXT`. This is a hard requirement: the workaround skips silently for `codex.cmd` npm shims because Node's safe no-shell execution requires a real `.exe` resolution (Node CVE-2024-27980 hardening forbids direct `.cmd`/`.bat` spawn without shell wrapping).
-2. Set the environment variable `MULTICLI_WINDOWS_CODEX_NO_SHELL=1` in your MCP server config and restart your host (Claude Code, etc.).
+multicli now applies a **codex.js launcher mimick** automatically on Windows whenever the npm `@openai/codex-win32-x64` package is installed. The fix spawns the vendored `codex.exe` directly with the exact spawn shape codex's internal sandbox setup expects (`shell:false`, `detached:false`, no `windowsHide`, env with `codex-path` prepended on `PATH` plus `CODEX_MANAGED_BY_NPM=1` and `CODEX_MANAGED_PACKAGE_ROOT`). This shape was empirically isolated by a 3-round file-RW diagnostic as the only spawn variant that lets codex's child shell launch succeed.
 
-If only `codex.cmd` is available on PATH, the workaround is **not applied** — multicli falls back to the default `shell:true` path for safety, and the failure will persist. In that case multicli surfaces a `[multicli] note` in the tool output (or hint in the error message) pointing here.
+**Requirements:**
+- Install codex via npm (`npm install -g @openai/codex@latest`). The vendored `@openai/codex-win32-x64/vendor/.../bin/codex.exe` must be reachable via `require.resolve`.
+- No extra environment variable is needed — the mimick activates automatically on Windows when the vendor binary resolves.
 
-A deeper bypass that parses `codex.cmd` and spawns `node.exe` directly is tracked as a future experiment, not part of this release.
+**Supported install topology:** The automatic vendor discovery is verified against npm-global / npm-local installs. yarn Berry PnP and pnpm hoist environments may not be located by the default heuristic — see escape hatch below.
+
+**Manual binary override (escape hatch for non-npm installs):**
+If automatic discovery fails (yarn Berry PnP, pnpm hoist, custom unpack, etc.), set `MULTICLI_WINDOWS_CODEX_BINARY` to the absolute path of the vendored `codex.exe` from `@openai/codex-win32-x64`:
+
+```
+MULTICLI_WINDOWS_CODEX_BINARY=/path/to/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe
+```
+
+The companion `codex-path` directory and package root are inferred from this path (the binary must live in the standard vendor layout). When the file does not exist, multicli falls back to the npm-global discovery.
+
+**Opt-out:**
+Set `MULTICLI_WINDOWS_CODEX_LEGACY_SPAWN=1` to disable the launcher mimick entirely and restore the legacy `codex.cmd via cmd.exe` spawn path. The legacy path is the same one used on multicli ≤ 1.5.39 and is still susceptible to issue #138 — use only when you need to bisect or revert behavior.
+
+**Deprecated:**
+`MULTICLI_WINDOWS_CODEX_NO_SHELL=1` (introduced in PR #139 as a diagnostic workaround) is kept as a no-op when the launcher mimick is active — the mimick path covers everything the flag used to and more. A one-time deprecation warning is logged to stderr the first time the flag is observed in a given process.
+
+If the failure persists with mimick active, it is most likely an upstream Codex sandbox issue — try `npm install -g @openai/codex@latest` and check the [Codex CLI release notes](https://github.com/openai/codex).
 
 **Need to tune timeouts or cleanup behavior?**
 Multi-CLI supports these optional environment variables:
