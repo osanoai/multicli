@@ -15,6 +15,7 @@ export const STATUS_MESSAGES = {
   CODEX_RESPONSE: "Codex response:",
   CLAUDE_RESPONSE: "Claude response:",
   OPENCODE_RESPONSE: "OpenCode response:",
+  GROK_RESPONSE: "Grok response:",
   // Timeout prevention messages
   PROCESSING_START: "🔍 Starting analysis (may take 5-15 minutes for large codebases)",
   PROCESSING_CONTINUE: "⏳ Still processing...",
@@ -56,6 +57,7 @@ export const CLI = {
     CODEX: "codex",
     CLAUDE: "claude",
     OPENCODE: "opencode",
+    GROK: "grok",
     ECHO: "echo",
   },
   // Gemini command flags
@@ -96,9 +98,18 @@ export const CLI = {
     SESSION: "-s",
     HELP: "--help",
   },
+  // Grok Build CLI flags
+  GROK_FLAGS: {
+    PROMPT: "-p",
+    HELP: "--help",
+  },
   // OpenCode subcommands
   OPENCODE_SUBCOMMANDS: {
     RUN: "run",
+    MODELS: "models",
+  },
+  // Grok subcommands
+  GROK_SUBCOMMANDS: {
     MODELS: "models",
   },
   // Default values

@@ -45,6 +45,7 @@ async function createConnectedPair(options?: CreateServerAppOptions) {
     codex: false,
     claude: true,
     opencode: false,
+    grok: false,
   });
 
   const app = await createServerApp(TEST_CONFIG, undefined, options);

@@ -7,13 +7,14 @@
 [![Node](https://img.shields.io/node/v/@osanoai/multicli)](https://www.npmjs.com/package/@osanoai/multicli)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**An MCP server that lets Claude, Gemini, Codex, and OpenCode call each other as tools.**
+**An MCP server that lets Claude, Gemini, Codex, OpenCode, and Grok call each other as tools.**
 
 ```
 Claude:   "Hey Gemini, what do you think about this code?"
 Gemini:   "It's mass. Let me ask Codex for a second opinion."
 Codex:    "You're both wrong. Here's the fix."
 OpenCode: "I checked with three providers. They all agree with Codex."
+Grok:     "One more angle: here's the risky edge case."
 ```
 
 ---
@@ -27,7 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/osanoai/multicli/main/install.sh | 
 Detects which AI CLIs you have installed and configures Multi-CLI for them automatically.
 
 - Claude Code is configured to use a per-user local HTTP service on `127.0.0.1`
-- Gemini CLI, Codex CLI, and OpenCode keep using stdio/local config by default
+- Gemini CLI, Codex CLI, OpenCode, and Grok keep using stdio/local config by default
 - The installer may update client config files on your behalf
 
 ---
@@ -36,10 +37,11 @@ Detects which AI CLIs you have installed and configures Multi-CLI for them autom
 
 Multi-CLI sits between your AI clients and bridges them via the [Model Context Protocol](https://modelcontextprotocol.io/). Install it once, and whichever AI you're talking to gains the ability to call the others.
 
-- **Claude** can ask Gemini, Codex, or OpenCode for help
-- **Gemini** can delegate to Claude, Codex, or OpenCode
-- **Codex** can consult Claude, Gemini, or OpenCode
-- **OpenCode** can call Claude, Gemini, or Codex (across 75+ providers)
+- **Claude** can ask Gemini, Codex, OpenCode, or Grok for help
+- **Gemini** can delegate to Claude, Codex, OpenCode, or Grok
+- **Codex** can consult Claude, Gemini, OpenCode, or Grok
+- **OpenCode** can call Claude, Gemini, Codex, or Grok (across 75+ providers)
+- **Grok** can provide another local CLI perspective through the Grok Build CLI
 - Each client's own tools are hidden (no talking to yourself, that's weird)
 - Auto-detects which CLIs you have installed — only shows what's available
 
@@ -67,8 +69,10 @@ You need **Node.js >= 20** and at least **one** of these CLIs installed:
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `npm install -g @google/gemini-cli` |
 | [Codex CLI](https://github.com/openai/codex) | `npm install -g @openai/codex` |
 | [OpenCode](https://opencode.ai) | `curl -fsSL https://opencode.ai/install | bash` |
+| Grok Build CLI | Install `grok` from its official distribution and log in locally |
 
 > Multi-CLI is most useful with two or more CLIs installed. With only one, the install still works, but there may be nothing to bridge yet.
+> Grok support uses your local `grok` command with `grok -p <prompt>`. The CLI must already be installed, on your `PATH`, and logged in on the user machine.
 
 ---
 
@@ -242,6 +246,9 @@ Once connected, your AI client gains access to tools for the *other* CLIs (never
 | `List-OpenCode-Models` | List available OpenCode models from all configured providers |
 | `Ask-OpenCode` | Ask-OpenCode a question or give it a task |
 | `OpenCode-Help` | Get OpenCode CLI help info |
+| `List-Grok-Models` | List available Grok Build CLI models from the local CLI |
+| `Ask-Grok` | Ask Grok Build CLI a question or give it a task |
+| `Grok-Help` | Get Grok Build CLI help info |
 
 ---
 
@@ -264,6 +271,7 @@ Once installed, just talk naturally to your AI:
 "Have Codex review this function for performance issues"
 "Get Claude's opinion on this error message"
 "Use OpenCode to get a second opinion from Llama"
+"Ask Grok for another pass on this design"
 ```
 
 Or get a second opinion on anything:
@@ -306,8 +314,11 @@ For Claude Code, Multi-CLI can also run as a local background HTTP service:
 **"No usable AI CLIs detected"**
 Make sure at least one other CLI is installed and on your PATH:
 ```bash
-which gemini && which codex && which claude && which opencode
+which gemini && which codex && which claude && which opencode && which grok
 ```
+
+**Grok tools do not appear**
+Make sure `grok` is installed, available on your `PATH`, and already logged in. Multi-CLI does not configure xAI API keys, OpenRouter, or external Grok services.
 
 **No tools showing up?**
 If only your own CLI is installed, Multi-CLI hides it (no self-calls). Install a *different* CLI to enable cross-model collaboration.

@@ -10,6 +10,7 @@ const CLIENT_EXCLUSIONS: Record<string, UnifiedTool['category']> = {
   'codex-mcp-client':       'codex',
   'gemini-cli-mcp-client':  'gemini',
   'opencode':               'opencode',
+  'grok':                   'grok',
 };
 
 export function getExcludedCategory(clientName: string | undefined): UnifiedTool['category'] | undefined {

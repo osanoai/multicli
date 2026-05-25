@@ -99,6 +99,7 @@ describe.skipIf(!canBindLoopback)('httpServer', () => {
       codex: false,
       claude: true,
       opencode: false,
+      grok: false,
     });
   });
 

@@ -95,6 +95,30 @@ export const opencodeHelpTool: UnifiedTool = {
   execute: async (_args, context) => executeCommand("opencode", ["--help"], context),
 };
 
+export const grokHelpTool: UnifiedTool = {
+  name: "Grok-Help",
+  description: "Receive help information from the Grok Build CLI",
+  zodSchema: helpArgsSchema,
+  prompt: {
+    description: "Receive help information from the Grok Build CLI",
+  },
+  category: 'grok',
+  timeoutClass: 'help',
+  execute: async (_args, context) => executeCommand("grok", ["--help"], context),
+};
+
+export const grokListModelsTool: UnifiedTool = {
+  name: "List-Grok-Models",
+  description: "List available Grok Build CLI models discovered by the local Grok CLI. You MAY call this before Ask-Grok if you need to inspect the local/default model configuration.",
+  zodSchema: noArgsSchema,
+  prompt: {
+    description: "List available Grok Build CLI models",
+  },
+  category: 'grok',
+  timeoutClass: 'help',
+  execute: async (_args, context) => executeCommand("grok", ["models"], context),
+};
+
 export const opencodeListModelsTool: UnifiedTool = {
   name: "List-OpenCode-Models",
   description: "List available OpenCode models from all configured providers, classified into tiers. You MUST call this before Ask-OpenCode to choose the right model for your task. Models are dynamically discovered from your providers.",

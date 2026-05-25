@@ -31,6 +31,10 @@ describe('getExcludedCategory', () => {
     expect(getExcludedCategory('gemini-cli-mcp-client')).toBe('gemini');
   });
 
+  it('should map "grok" to "grok"', () => {
+    expect(getExcludedCategory('grok')).toBe('grok');
+  });
+
   it('should return undefined for an unknown client name', () => {
     expect(getExcludedCategory('unknown-client')).toBeUndefined();
   });
@@ -49,13 +53,14 @@ describe('filterToolsForClient', () => {
     mockTool('ask-gemini', 'gemini'),
     mockTool('ask-codex', 'codex'),
     mockTool('ask-claude', 'claude'),
+    mockTool('ask-grok', 'grok'),
     mockTool('fetch-chunk', 'utility'),
   ];
 
   it('should remove tools matching the excluded category', () => {
     const result = filterToolsForClient(tools, 'claude-code');
 
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(4);
     expect(result.map(t => t.name)).not.toContain('ask-claude');
     expect(result.map(t => t.name)).toContain('ask-gemini');
     expect(result.map(t => t.name)).toContain('ask-codex');
@@ -65,19 +70,19 @@ describe('filterToolsForClient', () => {
   it('should return all tools for an unknown client name', () => {
     const result = filterToolsForClient(tools, 'some-random-client');
 
-    expect(result).toHaveLength(4);
+    expect(result).toHaveLength(5);
     expect(result).toEqual(tools);
   });
 
   it('should return all tools when clientName is undefined', () => {
     const result = filterToolsForClient(tools, undefined);
 
-    expect(result).toHaveLength(4);
+    expect(result).toHaveLength(5);
     expect(result).toEqual(tools);
   });
 
   it('should preserve utility tools for all known clients', () => {
-    for (const client of ['claude-code', 'codex-mcp-client', 'gemini-cli-mcp-client']) {
+    for (const client of ['claude-code', 'codex-mcp-client', 'gemini-cli-mcp-client', 'grok']) {
       const result = filterToolsForClient(tools, client);
       expect(result.map(t => t.name)).toContain('fetch-chunk');
     }

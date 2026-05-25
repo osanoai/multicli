@@ -75,12 +75,12 @@ describe('cliDetector', () => {
       process.env.QA_NO_CLIS = 'true';
 
       const result = await detectAvailableClis();
-      expect(result).toEqual({ gemini: false, codex: false, claude: false, opencode: false });
+      expect(result).toEqual({ gemini: false, codex: false, claude: false, opencode: false, grok: false });
       // spawn should not be called at all
       expect(spawn).not.toHaveBeenCalled();
     });
 
-    it('checks all three CLIs and returns correct availability', async () => {
+    it('checks all supported CLIs and returns correct availability', async () => {
       // Mock spawn to return different results for each CLI
       const mocks: ReturnType<typeof createMockChild>[] = [];
       vi.mocked(spawn).mockImplementation(() => {
@@ -92,16 +92,17 @@ describe('cliDetector', () => {
       const promise = detectAvailableClis();
 
       // Wait for all spawns to be called
-      await vi.waitFor(() => expect(mocks.length).toBe(4));
+      await vi.waitFor(() => expect(mocks.length).toBe(5));
 
-      // gemini found, codex not found, claude found, opencode not found
+      // gemini found, codex not found, claude found, opencode not found, grok found
       mocks[0].emitClose(0); // gemini
       mocks[1].emitClose(1); // codex
       mocks[2].emitClose(0); // claude
       mocks[3].emitClose(1); // opencode
+      mocks[4].emitClose(0); // grok
 
       const result = await promise;
-      expect(result).toEqual({ gemini: true, codex: false, claude: true, opencode: false });
+      expect(result).toEqual({ gemini: true, codex: false, claude: true, opencode: false, grok: true });
     });
   });
 });
