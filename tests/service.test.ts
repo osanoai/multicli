@@ -1,13 +1,13 @@
 import os from 'node:os';
 import path from 'node:path';
-import { rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
 import type { MultiCliConfig } from '../src/config.js';
 import { getServiceKind, getServicePaths } from '../src/service/paths.js';
 import { loadServiceEnvironment } from '../src/service/bootstrap.js';
-import { isMatchingClaudeConfigOutput } from '../src/service/manager.js';
+import { ensureServiceFilesystem, isMatchingClaudeConfigOutput } from '../src/service/manager.js';
 import {
   buildServiceEnvFileContents,
   createServiceManifest,
@@ -143,9 +143,79 @@ describe('service renderers', () => {
     expect(renderWindowsTaskXml(createServiceManifest(createConfig(), 'token-value', 'win32')))
       .toContain('<LogonTrigger>');
   });
+
+  it('renders systemd unit paths without quoted path values', () => {
+    const manifest = createServiceManifest(createConfig({
+      serviceRootDir: '/home/example/.config/multicli',
+      serviceLogPath: '/home/example/.config/multicli/logs/service.log',
+      serviceEnvPath: '/home/example/.config/multicli/env',
+      serviceManifestPath: '/home/example/.config/multicli/manifest.json',
+    }), 'token-value', 'linux');
+    const unit = renderSystemdUnit(manifest);
+
+    expect(unit).toContain('WorkingDirectory=/home/example/.config/multicli');
+    expect(unit).toContain('ExecStart=/home/example/.config/multicli/launcher.sh');
+    expect(unit).toContain('StandardOutput=append:/home/example/.config/multicli/logs/service.log');
+    expect(unit).toContain('StandardError=append:/home/example/.config/multicli/logs/service.log.stderr');
+    expect(unit).not.toContain('WorkingDirectory="');
+    expect(unit).not.toContain('append:"');
+  });
+
+  it('escapes systemd unit paths with spaces', () => {
+    const manifest = createServiceManifest(createConfig({
+      serviceRootDir: '/home/example/Multi CLI',
+      serviceLogPath: '/home/example/Multi CLI/logs/service.log',
+      serviceEnvPath: '/home/example/Multi CLI/env',
+      serviceManifestPath: '/home/example/Multi CLI/manifest.json',
+    }), 'token-value', 'linux');
+    const unit = renderSystemdUnit(manifest);
+
+    expect(unit).toContain('WorkingDirectory=/home/example/Multi\\x20CLI');
+    expect(unit).toContain('ExecStart=/home/example/Multi\\x20CLI/launcher.sh');
+    expect(unit).toContain('StandardOutput=append:/home/example/Multi\\x20CLI/logs/service.log');
+    expect(unit).toContain('StandardError=append:/home/example/Multi\\x20CLI/logs/service.log.stderr');
+  });
+
+  it('escapes literal percent characters in systemd unit paths', () => {
+    const manifest = createServiceManifest(createConfig({
+      serviceRootDir: '/home/example/Multi%CLI',
+      serviceLogPath: '/home/example/Multi%CLI/logs/service.log',
+      serviceEnvPath: '/home/example/Multi%CLI/env',
+      serviceManifestPath: '/home/example/Multi%CLI/manifest.json',
+    }), 'token-value', 'linux');
+    const unit = renderSystemdUnit(manifest);
+
+    expect(unit).toContain('WorkingDirectory=/home/example/Multi%%CLI');
+    expect(unit).toContain('ExecStart=/home/example/Multi%%CLI/launcher.sh');
+    expect(unit).toContain('StandardOutput=append:/home/example/Multi%%CLI/logs/service.log');
+    expect(unit).toContain('StandardError=append:/home/example/Multi%%CLI/logs/service.log.stderr');
+    expect(unit).not.toContain('\\x25');
+  });
 });
 
 describe('service manager', () => {
+  it('creates directories required before systemd starts the service', () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'multicli-service-fs-'));
+    const serviceRootDir = path.join(tempRoot, 'service');
+    const manifest = createServiceManifest(createConfig({
+      serviceRootDir,
+      serviceLogPath: path.join(serviceRootDir, 'logs', 'service.log'),
+      serviceEnvPath: path.join(serviceRootDir, 'env'),
+      serviceManifestPath: path.join(serviceRootDir, 'manifest.json'),
+    }), 'token-value', 'linux');
+
+    try {
+      ensureServiceFilesystem(manifest);
+
+      expect(existsSync(manifest.paths.root)).toBe(true);
+      expect(existsSync(path.dirname(manifest.paths.logFile))).toBe(true);
+      expect(existsSync(path.dirname(manifest.paths.stderrLogFile))).toBe(true);
+      expect(existsSync(path.dirname(manifest.paths.serviceDefinition))).toBe(true);
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('matches Claude MCP output only for the managed HTTP config', () => {
     const manifest = createServiceManifest(createConfig(), 'token-value', 'darwin');
 

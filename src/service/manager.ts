@@ -54,6 +54,16 @@ function writeTextFile(filePath: string, contents: string, mode?: number) {
   }
 }
 
+export function ensureServiceFilesystem(manifest: ServiceManifest) {
+  mkdirSync(manifest.paths.root, { recursive: true });
+  ensureParentDir(manifest.paths.envFile);
+  ensureParentDir(manifest.paths.launcher);
+  ensureParentDir(manifest.paths.serviceDefinition);
+  ensureParentDir(manifest.paths.manifest);
+  ensureParentDir(manifest.paths.logFile);
+  ensureParentDir(manifest.paths.stderrLogFile);
+}
+
 function loadManifest(config: MultiCliConfig): ServiceManifest {
   const manifestPath = config.serviceManifestPath;
   if (!existsSync(manifestPath)) {
@@ -266,7 +276,7 @@ async function installService(
     token,
   );
 
-  mkdirSync(manifest.paths.root, { recursive: true });
+  ensureServiceFilesystem(manifest);
   writeTextFile(
     manifest.paths.envFile,
     buildServiceEnvFileContents(manifest),
