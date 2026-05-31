@@ -112,8 +112,56 @@ describe('codexLauncher.resolveCodexNativeBinary (L0 happy path)', () => {
     expect(result).not.toBeNull();
     expect(result!.binaryPath.replace(/\\/g, '/')).toBe(fakeBin);
     expect(result!.pathDir.replace(/\\/g, '/')).toBe(`${fakeVendor}/x86_64-pc-windows-msvc/codex-path`);
-    // packageRoot = realpath(vendorRoot/..) i.e. the package root itself
     expect(result!.packageRoot.replace(/\\/g, '/')).toBe(fakePkgRoot);
+  });
+
+  it('sets packageRoot to @openai/codex root, not the platform package root', () => {
+    const codexRoot = 'C:/mock/node_modules/@openai/codex';
+    const fakePkgRoot = `${codexRoot}/node_modules/@openai/codex-win32-x64`;
+    const fakeVendor = `${fakePkgRoot}/vendor`;
+    const fakeBin = `${fakeVendor}/x86_64-pc-windows-msvc/bin/codex.exe`;
+
+    const result = resolveCodexNativeBinary({
+      platform: 'win32',
+      arch: 'x64',
+      packageJsonResolver: (id) => {
+        if (id === '@openai/codex-win32-x64/package.json') {
+          return `${fakePkgRoot}/package.json`;
+        }
+        if (id === '@openai/codex/package.json') {
+          return `${codexRoot}/package.json`;
+        }
+        throw new Error(`unexpected resolve: ${id}`);
+      },
+      existsSync: (p) => p.replace(/\\/g, '/') === fakeBin,
+      realpathSync: (p) => p,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.binaryPath.replace(/\\/g, '/')).toBe(fakeBin);
+    expect(result!.packageRoot.replace(/\\/g, '/')).toBe(codexRoot);
+  });
+
+  it('infers @openai/codex root from nested platform package when main package resolve fails', () => {
+    const codexRoot = 'C:/mock/node_modules/@openai/codex';
+    const fakePkgRoot = `${codexRoot}/node_modules/@openai/codex-win32-x64`;
+    const fakeBin = `${fakePkgRoot}/vendor/x86_64-pc-windows-msvc/bin/codex.exe`;
+
+    const result = resolveCodexNativeBinary({
+      platform: 'win32',
+      arch: 'x64',
+      packageJsonResolver: (id) => {
+        if (id === '@openai/codex-win32-x64/package.json') {
+          return `${fakePkgRoot}/package.json`;
+        }
+        throw new Error(`unexpected resolve: ${id}`);
+      },
+      existsSync: (p) => p.replace(/\\/g, '/') === fakeBin,
+      realpathSync: (p) => p,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.packageRoot.replace(/\\/g, '/')).toBe(codexRoot);
   });
 
   it('resolves linux/darwin to bin/codex (no .exe) when binary exists', () => {
@@ -361,8 +409,9 @@ describe('codexLauncher.resolveCodexNativeBinary (L0-fix: production resolver tr
     // verify the fallback control flow by providing extraPaths via PATH +
     // existsSync stub that simulates an installed npm-global vendor.
     const fakeNpmRoot = 'D:/mock-global';
-    const pkgJsonPath = `${fakeNpmRoot}/node_modules/@openai/codex/node_modules/@openai/codex-win32-x64/package.json`;
-    const fakeBin = `${fakeNpmRoot}/node_modules/@openai/codex/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe`;
+    const codexRoot = `${fakeNpmRoot}/node_modules/@openai/codex`;
+    const pkgJsonPath = `${codexRoot}/node_modules/@openai/codex-win32-x64/package.json`;
+    const fakeBin = `${codexRoot}/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe`;
 
     const result = resolveCodexNativeBinary({
       platform: 'win32',
@@ -371,6 +420,7 @@ describe('codexLauncher.resolveCodexNativeBinary (L0-fix: production resolver tr
       // the default would have produced (multicli fail → npm-global hit).
       packageJsonResolver: (id) => {
         if (id === '@openai/codex-win32-x64/package.json') return pkgJsonPath;
+        if (id === '@openai/codex/package.json') return `${codexRoot}/package.json`;
         throw new Error(`unexpected: ${id}`);
       },
       existsSync: (p) => p.replace(/\\/g, '/') === fakeBin,
@@ -379,5 +429,6 @@ describe('codexLauncher.resolveCodexNativeBinary (L0-fix: production resolver tr
 
     expect(result).not.toBeNull();
     expect(result!.binaryPath.replace(/\\/g, '/')).toBe(fakeBin);
+    expect(result!.packageRoot.replace(/\\/g, '/')).toBe(codexRoot);
   });
 });

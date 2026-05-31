@@ -10,6 +10,14 @@ vi.mock('../../src/utils/commandExecutor.js', async () => {
   };
 });
 
+vi.mock('../../src/utils/codexLauncher.js', () => ({
+  resolveCodexNativeBinary: vi.fn().mockReturnValue(null),
+  buildCodexLauncherEnv: vi.fn(),
+}));
+
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import {
   askCodexTool,
   MODEL_DESCRIPTION_THRESHOLD,
@@ -199,5 +207,57 @@ describe('Ask-Codex 통합 E2E — model validation 차단 (R3)', () => {
         askCodexTool.execute(parseResult.data, undefined as never),
       ).rejects.toBeInstanceOf(CodexInvocationError);
     }
+  });
+});
+
+/**
+ * Markdown preload wiring — multicli reads .md references itself and inlines
+ * them so codex never has to read from disk (codex 0.135.0 Windows sandbox bug).
+ */
+describe('Ask-Codex — Markdown preload wiring (Windows)', () => {
+  const ORIGINAL_PLATFORM = process.platform;
+  let root: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv('MULTICLI_WINDOWS_CODEX_NO_SHELL', '');
+    vi.stubEnv('MULTICLI_WINDOWS_CODEX_NO_PRELOAD', '');
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+    root = mkdtempSync(path.join(os.tmpdir(), 'multicli-tool-preload-'));
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    Object.defineProperty(process, 'platform', { value: ORIGINAL_PLATFORM, configurable: true });
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('inlines a referenced .md file into the prompt sent to codex', async () => {
+    mkdirSync(path.join(root, 'docs'), { recursive: true });
+    writeFileSync(path.join(root, 'docs', 'foo.md'), 'PRELOADED-BODY', 'utf8');
+    vi.mocked(executeCommand).mockResolvedValueOnce('ok');
+
+    await askCodexTool.execute(
+      { prompt: 'review docs/foo.md', model: 'gpt-5.4' },
+      { cwd: root } as never,
+    );
+
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+    const codexArgs = vi.mocked(executeCommand).mock.calls[0][1] as string[];
+    const promptArg = codexArgs[1];
+    expect(promptArg).toContain('PRELOADED-BODY');
+    expect(promptArg).toContain('multicli-preloaded-files');
+  });
+
+  it('does not call codex when preload hard-fails (oversize file)', async () => {
+    mkdirSync(path.join(root, 'docs'), { recursive: true });
+    writeFileSync(path.join(root, 'docs', 'big.md'), 'x'.repeat(200 * 1024 + 1), 'utf8');
+    vi.mocked(executeCommand).mockResolvedValue('should-not-run');
+
+    const { FilePreloadError } = await import('../../src/utils/codexFilePreloader.js');
+    await expect(
+      askCodexTool.execute({ prompt: 'review docs/big.md', model: 'gpt-5.4' }, { cwd: root } as never),
+    ).rejects.toBeInstanceOf(FilePreloadError);
+    expect(executeCommand).not.toHaveBeenCalled();
   });
 });

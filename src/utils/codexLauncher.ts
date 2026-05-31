@@ -15,6 +15,10 @@ import { createRequire } from 'node:module';
 export type CodexNativeResolution = {
   binaryPath: string;
   pathDir: string;
+  /**
+   * Root of the top-level @openai/codex package, not the platform package.
+   * codex.js sets CODEX_MANAGED_PACKAGE_ROOT to this directory.
+   */
   packageRoot: string;
 };
 
@@ -165,19 +169,39 @@ export function resolveCodexNativeBinary(
       throw new Error(`Cannot resolve ${id}`);
     });
 
-  const vendorRoots: string[] = [];
+  const vendorRoots: { vendorRoot: string; managedPackageRoot: string }[] = [];
   try {
     const pkgJsonPath = resolver(`${platformPackage}/package.json`);
-    vendorRoots.push(path.join(path.dirname(pkgJsonPath), 'vendor'));
+    const platformPackageRoot = path.dirname(pkgJsonPath);
+    const nestedCodexRoot = path.resolve(platformPackageRoot, '..', '..', '..');
+    let managedPackageRoot = platformPackageRoot;
+    try {
+      const codexPackageJsonPath = resolver('@openai/codex/package.json');
+      managedPackageRoot = path.dirname(codexPackageJsonPath);
+    } catch {
+      if (
+        path.basename(path.dirname(nestedCodexRoot)) === '@openai'
+        && path.basename(nestedCodexRoot) === 'codex'
+      ) {
+        managedPackageRoot = nestedCodexRoot;
+      }
+    }
+    vendorRoots.push({
+      vendorRoot: path.join(platformPackageRoot, 'vendor'),
+      managedPackageRoot,
+    });
   } catch {
     // platform package not installed via npm — fall through to localVendorRoot
   }
 
   if (deps.localVendorRoot) {
-    vendorRoots.push(deps.localVendorRoot);
+    vendorRoots.push({
+      vendorRoot: deps.localVendorRoot,
+      managedPackageRoot: path.resolve(deps.localVendorRoot, '..'),
+    });
   }
 
-  for (const vendorRoot of vendorRoots) {
+  for (const { vendorRoot, managedPackageRoot } of vendorRoots) {
     const packageRoot = path.join(vendorRoot, triple);
 
     const modernBin = path.join(packageRoot, 'bin', binaryName);
@@ -185,7 +209,7 @@ export function resolveCodexNativeBinary(
       return {
         binaryPath: modernBin,
         pathDir: path.join(packageRoot, 'codex-path'),
-        packageRoot: realpathSync(path.join(vendorRoot, '..')),
+        packageRoot: realpathSync(managedPackageRoot),
       };
     }
 
@@ -194,7 +218,7 @@ export function resolveCodexNativeBinary(
       return {
         binaryPath: legacyBin,
         pathDir: path.join(packageRoot, 'path'),
-        packageRoot: realpathSync(path.join(vendorRoot, '..')),
+        packageRoot: realpathSync(managedPackageRoot),
       };
     }
   }

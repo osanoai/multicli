@@ -1,0 +1,30 @@
+{
+  "name": "@openai/codex",
+  "version": "0.135.0",
+  "description": "Codex CLI is a coding agent from OpenAI that runs locally on your computer.",
+  "license": "Apache-2.0",
+  "bin": {
+    "codex": "bin/codex.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "bin/codex.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openai/codex.git",
+    "directory": "codex-cli"
+  },
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "optionalDependencies": {
+    "@openai/codex-linux-x64": "npm:@openai/codex@0.135.0-linux-x64",
+    "@openai/codex-linux-arm64": "npm:@openai/codex@0.135.0-linux-arm64",
+    "@openai/codex-darwin-x64": "npm:@openai/codex@0.135.0-darwin-x64",
+    "@openai/codex-darwin-arm64": "npm:@openai/codex@0.135.0-darwin-arm64",
+    "@openai/codex-win32-x64": "npm:@openai/codex@0.135.0-win32-x64",
+    "@openai/codex-win32-arm64": "npm:@openai/codex@0.135.0-win32-arm64"
+  }
+}

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { UnifiedTool } from './registry.js';
 import { executeCodexCLI } from '../utils/codexExecutor.js';
+import { preloadFileReferencesForCodex } from '../utils/codexFilePreloader.js';
 import { ERROR_MESSAGES, STATUS_MESSAGES } from '../constants.js';
 import { getCatalog } from '../modelCatalog.js';
 
@@ -44,9 +45,10 @@ const codexModelDescription = buildCodexModelDescription(codexAllowedModels);
 
 const askCodexArgsSchema = z.object({
   prompt: z.string().min(1).describe(
-    'The question or task for Codex. REQUIRED — MUST be a non-empty string. Codex has FULL '
-      + 'access to the filesystem and can read files itself. Do NOT pre-read or inline file '
-      + 'contents — just describe the task and let Codex explore the codebase.',
+    'The question or task for Codex. REQUIRED — MUST be a non-empty string. Just describe the '
+      + 'task and reference files by path; Codex explores the codebase itself. On Windows, multicli '
+      + 'auto-inlines referenced Markdown (.md) files because Codex cannot read from disk there — '
+      + 'you do not need to pre-read them.',
   ),
   model: z.string().min(1)
     .refine((id) => codexModelSet.has(id), {
@@ -69,7 +71,7 @@ const askCodexArgsSchema = z.object({
 
 export const askCodexTool: UnifiedTool = {
   name: "Ask-Codex",
-  description: "Ask OpenAI Codex a question or give it a task. Codex has full filesystem access and will read files itself — do NOT pre-gather context or inline file contents into the prompt. Just describe what you need. You MUST call List-Codex-Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason. This tool is long-running (1-15 min); delegate this call to a sub-agent or background task.",
+  description: "Ask OpenAI Codex a question or give it a task. Just describe what you need and reference files by path — Codex explores the codebase itself. (On Windows, multicli auto-inlines referenced Markdown files since Codex cannot read from disk there.) You MUST call List-Codex-Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason. This tool is long-running (1-15 min); delegate this call to a sub-agent or background task.",
   zodSchema: askCodexArgsSchema,
   prompt: {
     description: "Execute 'codex exec <prompt> --full-auto' to get Codex's response.",
@@ -84,8 +86,14 @@ export const askCodexTool: UnifiedTool = {
       throw new Error(ERROR_MESSAGES.NO_PROMPT_PROVIDED);
     }
 
+    // Windows codex 0.135.0 sandbox cannot read files from disk; multicli
+    // preloads referenced Markdown files and inlines them. No-op off-Windows.
+    // A FilePreloadError here propagates (codex is NOT invoked) so the caller
+    // learns exactly which file could not be read.
+    const effectivePrompt = preloadFileReferencesForCodex(prompt as string, context);
+
     const result = await executeCodexCLI(
-      prompt as string,
+      effectivePrompt,
       model as string,
       sandbox as string | undefined,
       approvalPolicy as string | undefined,

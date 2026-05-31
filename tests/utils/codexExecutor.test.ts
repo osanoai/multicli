@@ -15,7 +15,7 @@ vi.mock('../../src/utils/codexLauncher.js', () => ({
   buildCodexLauncherEnv: vi.fn(),
 }));
 
-import { executeCodexCLI, _resetNoShellDeprecationLog } from '../../src/utils/codexExecutor.js';
+import { executeCodexCLI, WindowsSandboxError, _resetNoShellDeprecationLog } from '../../src/utils/codexExecutor.js';
 import { executeCommand, CommandExecutionError } from '../../src/utils/commandExecutor.js';
 import { resolveCodexNativeBinary, buildCodexLauncherEnv } from '../../src/utils/codexLauncher.js';
 
@@ -282,6 +282,70 @@ describe('codexExecutor — return contract (R0)', () => {
 
     expect(typeof result).toBe('string');
     expect(result).toBe('');
+  });
+});
+
+describe('codexExecutor — Windows sandbox refresh surfacing', () => {
+  const ORIGINAL_PLATFORM = process.platform;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv('MULTICLI_WINDOWS_CODEX_NO_SHELL', '');
+    vi.stubEnv('MULTICLI_WINDOWS_CODEX_LEGACY_SPAWN', '');
+    vi.mocked(resolveCodexNativeBinary).mockReturnValue(null);
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    Object.defineProperty(process, 'platform', { value: ORIGINAL_PLATFORM, configurable: true });
+  });
+
+  it('throws WindowsSandboxError (no retry) when the run fails with the sandbox refresh marker', async () => {
+    const err = new CommandExecutionError('failed', 'Command failed: windows sandbox: spawn setup refresh', {
+      command: 'codex',
+      args: ['exec'],
+      stderr: 'windows sandbox: spawn setup refresh',
+    });
+    vi.mocked(executeCommand).mockRejectedValueOnce(err);
+
+    await expect(executeCodexCLI('read a file', 'gpt-5.4')).rejects.toBeInstanceOf(WindowsSandboxError);
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces an actionable WindowsSandboxError message that mentions inlining', async () => {
+    const err = new CommandExecutionError('failed', 'windows sandbox: spawn setup refresh', {
+      command: 'codex',
+      args: ['exec'],
+      stderr: 'windows sandbox: spawn setup refresh',
+    });
+    vi.mocked(executeCommand).mockRejectedValueOnce(err);
+
+    await expect(executeCodexCLI('read a file', 'gpt-5.4')).rejects.toThrow(/inline/i);
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('(F-04) does NOT throw when the marker only appears in successful output', async () => {
+    const out = 'Audit of the guide: it documents `windows sandbox: spawn setup refresh`. All good.';
+    vi.mocked(executeCommand).mockResolvedValueOnce(out);
+
+    const result = await executeCodexCLI('summarize docs/guide.md', 'gpt-5.4');
+
+    expect(result).toBe(out);
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates the original error unchanged on non-Windows platforms', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    const err = new CommandExecutionError('failed', 'windows sandbox: spawn setup refresh', {
+      command: 'codex',
+      args: ['exec'],
+      stderr: 'windows sandbox: spawn setup refresh',
+    });
+    vi.mocked(executeCommand).mockRejectedValueOnce(err);
+
+    await expect(executeCodexCLI('task', 'gpt-5.4')).rejects.toBe(err);
+    expect(executeCommand).toHaveBeenCalledTimes(1);
   });
 });
 

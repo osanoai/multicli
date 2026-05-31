@@ -1,4 +1,4 @@
-import { executeCommand, type ExecuteCommandOptions } from './commandExecutor.js';
+import { CommandExecutionError, executeCommand, type ExecuteCommandOptions } from './commandExecutor.js';
 import { CLI } from '../constants.js';
 import { ToolExecutionContext } from '../execution.js';
 import { resolveCodexNativeBinary, buildCodexLauncherEnv } from './codexLauncher.js';
@@ -9,6 +9,46 @@ let noShellDeprecationLogged = false;
 /** @internal — test-only reset hook */
 export function _resetNoShellDeprecationLog(): void {
   noShellDeprecationLogged = false;
+}
+
+const WINDOWS_SANDBOX_REFRESH_MARKER = 'windows sandbox: spawn setup refresh';
+
+/**
+ * Codex 0.135.0-era Windows vendor bug: codex's sandbox cannot spawn ANY
+ * subprocess (`windows sandbox: spawn setup refresh`), so it cannot read files
+ * from disk. Empirically isolated — not an env/launcher/WindowsApps issue.
+ * Markdown reads are auto-inlined upstream by codexFilePreloader; for other
+ * cases we surface this actionable error instead of a raw stderr dump.
+ *
+ * NOTE: marker → error is only judged in the FAILURE context (caught command
+ * error). A successful audit whose output merely *contains* the marker string
+ * (e.g. reviewing this guide) must NOT be misclassified as a failure.
+ */
+export class WindowsSandboxError extends Error {
+  constructor(public readonly originalError?: Error) {
+    super(
+      'Codex could not spawn a subprocess in this Windows environment ' +
+        `(${WINDOWS_SANDBOX_REFRESH_MARKER}), so it cannot read files from disk. ` +
+        'Markdown (.md) references are auto-inlined by multicli; for other file types, ' +
+        'inline the file contents into your prompt instead of asking Codex to read them. ' +
+        '(Set MULTICLI_WINDOWS_CODEX_NO_PRELOAD=1 to disable Markdown preloading.)',
+    );
+    this.name = 'WindowsSandboxError';
+  }
+}
+
+function containsWindowsSandboxRefreshMarker(text?: string): boolean {
+  return typeof text === 'string' && text.toLowerCase().includes(WINDOWS_SANDBOX_REFRESH_MARKER);
+}
+
+function isWindowsSandboxRefreshFailure(error: unknown): boolean {
+  if (error instanceof CommandExecutionError) {
+    return containsWindowsSandboxRefreshMarker(error.message)
+      || containsWindowsSandboxRefreshMarker(error.details.stdout)
+      || containsWindowsSandboxRefreshMarker(error.details.stderr);
+  }
+
+  return error instanceof Error && containsWindowsSandboxRefreshMarker(error.message);
 }
 
 /**
@@ -113,21 +153,25 @@ export async function executeCodexCLI(
   approvalPolicy?: string,
   context?: ToolExecutionContext,
 ): Promise<string> {
-  const args: string[] = [
-    CLI.SUBCOMMANDS.EXEC, prompt,
-    CLI.CODEX_FLAGS.FULL_AUTO,
-    CLI.CODEX_FLAGS.SKIP_GIT_CHECK,
-    CLI.CODEX_FLAGS.COLOR, "never",
-    CLI.CODEX_FLAGS.MODEL, model,
-  ];
+  const buildArgs = (promptForRun: string): string[] => {
+    const args: string[] = [
+      CLI.SUBCOMMANDS.EXEC, promptForRun,
+      CLI.CODEX_FLAGS.FULL_AUTO,
+      CLI.CODEX_FLAGS.SKIP_GIT_CHECK,
+      CLI.CODEX_FLAGS.COLOR, "never",
+      CLI.CODEX_FLAGS.MODEL, model,
+    ];
 
-  if (sandbox) {
-    args.push(CLI.CODEX_FLAGS.SANDBOX, sandbox);
-  }
+    if (sandbox) {
+      args.push(CLI.CODEX_FLAGS.SANDBOX, sandbox);
+    }
 
-  if (approvalPolicy) {
-    args.push(CLI.CODEX_FLAGS.APPROVAL, approvalPolicy);
-  }
+    if (approvalPolicy) {
+      args.push(CLI.CODEX_FLAGS.APPROVAL, approvalPolicy);
+    }
+
+    return args;
+  };
 
   // Issue #138 follow-up (2026-05-23): codex.js launcher mimicking is the
   // empirical fix for Windows sandbox compatibility. Default-on when:
@@ -171,7 +215,22 @@ export async function executeCodexCLI(
     }
   }
 
-  const output = await executeCommand(CLI.COMMANDS.CODEX, args, codexContext);
+  // Markdown (.md) reads are auto-inlined upstream by codexFilePreloader, so
+  // there is no shell-steering/retry here. If codex still fails with the
+  // sandbox-spawn marker (e.g. a non-Markdown read), surface a clear
+  // WindowsSandboxError instead of retrying a path that cannot succeed.
+  let output: string;
+  try {
+    output = await executeCommand(CLI.COMMANDS.CODEX, buildArgs(prompt), codexContext);
+  } catch (error) {
+    if (platformIsWindows && isWindowsSandboxRefreshFailure(error)) {
+      throw new WindowsSandboxError(error instanceof Error ? error : undefined);
+    }
+    throw error;
+  }
+
+  // F-04: do NOT treat the marker in *successful* output as a failure — a
+  // genuine audit may legitimately quote the marker string.
 
   // R2-b: codex ERROR JSON detection — silent swallow 종결, throw 로 명시 surface
   const err = detectCodexError(output);
