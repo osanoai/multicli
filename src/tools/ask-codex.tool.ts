@@ -64,8 +64,9 @@ const askCodexArgsSchema = z.object({
       + "'workspace-write' (default), or 'danger-full-access' (unrestricted).",
   ),
   approvalPolicy: z.enum(['never', 'on-request', 'on-failure', 'untrusted']).optional().describe(
-    "Optional. Do NOT set unless explicitly needed. Approval policy: 'never', 'on-request' (default), "
-      + "'on-failure', or 'untrusted'.",
+    "Optional. Do NOT set unless explicitly needed. Approval policy: 'never' (default, for "
+      + "non-interactive exec), 'on-request', 'on-failure', or 'untrusted'. Applied via "
+      + "`-c approval_policy=<value>` since codex exec does not accept `-a`.",
   ),
 });
 
@@ -74,7 +75,7 @@ export const askCodexTool: UnifiedTool = {
   description: "Ask OpenAI Codex a question or give it a task. Just describe what you need and reference files by path — Codex explores the codebase itself. (On Windows, multicli auto-inlines referenced Markdown files since Codex cannot read from disk there.) You MUST call List-Codex-Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason. This tool is long-running (1-15 min); delegate this call to a sub-agent or background task.",
   zodSchema: askCodexArgsSchema,
   prompt: {
-    description: "Execute 'codex exec <prompt> --full-auto' to get Codex's response.",
+    description: "Execute 'codex exec <prompt> --sandbox workspace-write' to get Codex's response.",
   },
   category: 'codex',
   execution: { taskSupport: 'optional' },

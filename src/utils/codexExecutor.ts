@@ -154,21 +154,25 @@ export async function executeCodexCLI(
   context?: ToolExecutionContext,
 ): Promise<string> {
   const buildArgs = (promptForRun: string): string[] => {
+    // codex 0.137.0 deprecated `--full-auto` (warning: use `--sandbox
+    // workspace-write`). We now pass `--sandbox` explicitly. The historical
+    // `--full-auto` ran with `sandbox: workspace-write` + `approval: never`;
+    // passing only `--sandbox` flips codex's default approval to `on-request`,
+    // which would block in the non-interactive `exec` path.
+    //
+    // `-a/--ask-for-approval` is a GLOBAL option (codex 0.137.0): it is rejected
+    // when placed after the `exec` subcommand. So we pin approval via the
+    // `-c approval_policy=<value>` config override (parsed as a TOML literal),
+    // defaulting to `never` to preserve the old `--full-auto` behavior. Explicit
+    // sandbox/approvalPolicy args take precedence.
     const args: string[] = [
       CLI.SUBCOMMANDS.EXEC, promptForRun,
-      CLI.CODEX_FLAGS.FULL_AUTO,
       CLI.CODEX_FLAGS.SKIP_GIT_CHECK,
       CLI.CODEX_FLAGS.COLOR, "never",
       CLI.CODEX_FLAGS.MODEL, model,
+      CLI.CODEX_FLAGS.SANDBOX, sandbox ?? "workspace-write",
+      CLI.CODEX_FLAGS.CONFIG, `approval_policy=${approvalPolicy ?? "never"}`,
     ];
-
-    if (sandbox) {
-      args.push(CLI.CODEX_FLAGS.SANDBOX, sandbox);
-    }
-
-    if (approvalPolicy) {
-      args.push(CLI.CODEX_FLAGS.APPROVAL, approvalPolicy);
-    }
 
     return args;
   };

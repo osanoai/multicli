@@ -36,36 +36,42 @@ describe('codexExecutor', () => {
     vi.unstubAllEnvs();
   });
 
-  it('builds correct base args', async () => {
+  it('builds correct base args (default sandbox workspace-write + approval_policy=never via -c, no --full-auto)', async () => {
     await executeCodexCLI('fix this bug', 'gpt-5.2-codex');
 
     expect(executeCommand).toHaveBeenCalledWith(
       'codex',
       [
         'exec', 'fix this bug',
-        '--full-auto',
         '--skip-git-repo-check',
         '--color', 'never',
         '-m', 'gpt-5.2-codex',
+        '-s', 'workspace-write',
+        '-c', 'approval_policy=never',
       ],
       undefined
     );
+    const args = vi.mocked(executeCommand).mock.calls[0][1];
+    expect(args).not.toContain('--full-auto');
+    expect(args).not.toContain('-a'); // -a is rejected after `exec` in codex 0.137.0
   });
 
-  it('adds -s sandbox when provided', async () => {
+  it('overrides default sandbox when one is provided', async () => {
     await executeCodexCLI('task', 'gpt-5.2-codex', 'read-only');
 
     const args = vi.mocked(executeCommand).mock.calls[0][1];
     expect(args).toContain('-s');
     expect(args).toContain('read-only');
+    expect(args).not.toContain('workspace-write');
   });
 
-  it('adds -a approvalPolicy when provided', async () => {
-    await executeCodexCLI('task', 'gpt-5.2-codex', undefined, 'never');
+  it('passes approvalPolicy via -c approval_policy override when provided', async () => {
+    await executeCodexCLI('task', 'gpt-5.2-codex', undefined, 'untrusted');
 
     const args = vi.mocked(executeCommand).mock.calls[0][1];
-    expect(args).toContain('-a');
-    expect(args).toContain('never');
+    expect(args).toContain('-c');
+    expect(args).toContain('approval_policy=untrusted');
+    expect(args).not.toContain('approval_policy=never');
   });
 
   it('includes both sandbox and approvalPolicy when both provided', async () => {
@@ -74,8 +80,8 @@ describe('codexExecutor', () => {
     const args = vi.mocked(executeCommand).mock.calls[0][1];
     expect(args).toContain('-s');
     expect(args).toContain('workspace-write');
-    expect(args).toContain('-a');
-    expect(args).toContain('on-failure');
+    expect(args).toContain('-c');
+    expect(args).toContain('approval_policy=on-failure');
   });
 
   it('passes onProgress callback through', async () => {

@@ -86,7 +86,7 @@ const CLI_CONFIGS: CLIConfig[] = [
     extractScript: 'scripts/extract-codex.sh',
     fastModelPattern: /mini/i,
     buildEnrichmentCommand: (model, prompt) =>
-      `codex exec --full-auto --skip-git-repo-check --color never -m ${model} ${shellQuote(prompt)}`,
+      `codex exec --sandbox workspace-write --skip-git-repo-check --color never -m ${model} ${shellQuote(prompt)}`,
   },
 ];
 

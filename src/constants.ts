@@ -73,9 +73,10 @@ export const CLI = {
   CODEX_FLAGS: {
     MODEL: "-m",
     SANDBOX: "-s",
-    APPROVAL: "-a",
+    // `-a/--ask-for-approval` is a GLOBAL option in codex 0.137.0 and is
+    // rejected after the `exec` subcommand; approval is set via CONFIG instead.
+    CONFIG: "-c",
     COLOR: "--color",
-    FULL_AUTO: "--full-auto",
     SKIP_GIT_CHECK: "--skip-git-repo-check",
   },
   // Claude Code flags
