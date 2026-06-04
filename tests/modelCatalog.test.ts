@@ -112,14 +112,13 @@ describe('formatCatalog', () => {
 // ===========================================================================
 
 describe('codex catalog drift detect (R1)', () => {
-  it('codex 모델 풀이 4종 stable baseline 과 일치한다', () => {
+  it('codex 모델 풀이 3종 stable baseline 과 일치한다', () => {
     const catalog = getCatalog('codex');
     const allModels = catalog.tiers.flatMap(t => t.models).sort();
     expect(allModels).toEqual([
-      'gpt-5.2',
-      'gpt-5.3-codex',
       'gpt-5.4',
       'gpt-5.4-mini',
+      'gpt-5.5',
     ]);
   });
 
@@ -130,8 +129,8 @@ describe('codex catalog drift detect (R1)', () => {
     );
     expect(tierMap).toEqual({
       fast: ['gpt-5.4-mini'],
-      balanced: ['gpt-5.2', 'gpt-5.3-codex'],
-      powerful: ['gpt-5.4'],
+      balanced: ['gpt-5.4'],
+      powerful: ['gpt-5.5'],
     });
   });
 });
