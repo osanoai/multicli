@@ -19,6 +19,20 @@ function quotePowerShell(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
+function escapeSystemdPath(value: string): string {
+  return Array.from(Buffer.from(value, 'utf8'))
+    .map((byte) => {
+      const char = String.fromCharCode(byte);
+      if (char === '%') {
+        return '%%';
+      }
+      return /[A-Za-z0-9/_.:-]/.test(char)
+        ? char
+        : `\\x${byte.toString(16).padStart(2, '0')}`;
+    })
+    .join('');
+}
+
 export function renderPosixLauncher(manifest: ServiceManifest): string {
   return `#!/bin/sh
 set -eu
@@ -68,12 +82,12 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=${JSON.stringify(manifest.paths.root)}
-ExecStart=${JSON.stringify(manifest.paths.launcher)}
+WorkingDirectory=${escapeSystemdPath(manifest.paths.root)}
+ExecStart=${escapeSystemdPath(manifest.paths.launcher)}
 Restart=on-failure
 RestartSec=1
-StandardOutput=append:${JSON.stringify(manifest.paths.logFile)}
-StandardError=append:${JSON.stringify(manifest.paths.stderrLogFile)}
+StandardOutput=append:${escapeSystemdPath(manifest.paths.logFile)}
+StandardError=append:${escapeSystemdPath(manifest.paths.stderrLogFile)}
 
 [Install]
 WantedBy=default.target
