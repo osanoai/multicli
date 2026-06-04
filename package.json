@@ -60,7 +60,7 @@
   },
   "overrides": {
     "@hono/node-server": "^1.19.14",
-    "hono": "^4.12.14",
+    "hono": "^4.12.23",
     "path-to-regexp": "^8.4.2",
     "picomatch": "^4.0.4"
   },
