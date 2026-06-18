@@ -1,19 +1,20 @@
 import { ChangeModeEdit } from './changeModeParser.js';
 export function formatChangeModeResponse(
   edits: ChangeModeEdit[],
-  chunkInfo?: { current: number; total: number; cacheKey?: string }
+  chunkInfo?: { current: number; total: number; cacheKey?: string },
+  backendName = 'Antigravity',
 ): string {
   const header = chunkInfo && chunkInfo.total > 1 
     ? `[CHANGEMODE OUTPUT - Chunk ${chunkInfo.current} of ${chunkInfo.total}]
 
-Gemini has analyzed your codebase and generated edits across ${chunkInfo.total} chunks.
+${backendName} has analyzed your codebase and generated edits across ${chunkInfo.total} chunks.
 This chunk contains ${edits.length} complete edit${edits.length === 1 ? '' : 's'} that can be applied independently.
 
 Each chunk contains self-contained edits grouped by file. You can safely apply these edits
 before fetching the next chunk.
 
 `
-    : `[CHANGEMODE OUTPUT - Gemini has analyzed the files and provided these edits]
+    : `[CHANGEMODE OUTPUT - ${backendName} has analyzed the files and provided these edits]
 
 I have prepared ${edits.length} modification${edits.length === 1 ? '' : 's'} for your codebase.
 

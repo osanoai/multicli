@@ -86,7 +86,7 @@ function buildFromGenerated(cliName: StaticCLIName): CLICatalog | null {
 // ── Resolved catalogs ────────────────────────────────────────────────────────
 
 const CATALOGS: Record<string, CLICatalog> = {};
-for (const cli of ['gemini', 'codex', 'claude'] as const) {
+for (const cli of ['codex', 'claude'] as const) {
   const built = buildFromGenerated(cli);
   if (!built) {
     throw new Error(

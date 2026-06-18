@@ -22,14 +22,18 @@ describe('initTools', () => {
     toolRegistry.push(...savedRegistry);
   });
 
-  it('registers gemini tools when gemini available', async () => {
+  it('registers antigravity tools and deprecated gemini aliases when agy is available', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
-      gemini: true, codex: false, claude: false, opencode: false,
+      antigravity: true, gemini: true, codex: false, claude: false, opencode: false,
     });
 
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('List-Antigravity-Models');
+    expect(names).toContain('Ask-Antigravity');
+    expect(names).toContain('Fetch-Antigravity-Chunk');
+    expect(names).toContain('Antigravity-Help');
     expect(names).toContain('List-Gemini-Models');
     expect(names).toContain('Ask-Gemini');
     expect(names).toContain('Fetch-Chunk');
@@ -42,7 +46,7 @@ describe('initTools', () => {
 
   it('registers codex tools when codex available', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
-      gemini: false, codex: true, claude: false, opencode: false,
+      antigravity: false, gemini: false, codex: true, claude: false, opencode: false,
     });
 
     await initTools();
@@ -52,13 +56,14 @@ describe('initTools', () => {
     expect(names).toContain('Ask-Codex');
     expect(names).toContain('Codex-Help');
     expect(names).not.toContain('Ask-Gemini');
+    expect(names).not.toContain('Ask-Antigravity');
     expect(names).not.toContain('Ask-Claude');
     expect(names).not.toContain('Ask-OpenCode');
   });
 
   it('registers claude tools when claude available', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
-      gemini: false, codex: false, claude: true, opencode: false,
+      antigravity: false, gemini: false, codex: false, claude: true, opencode: false,
     });
 
     await initTools();
@@ -68,13 +73,14 @@ describe('initTools', () => {
     expect(names).toContain('Ask-Claude');
     expect(names).toContain('Claude-Help');
     expect(names).not.toContain('Ask-Gemini');
+    expect(names).not.toContain('Ask-Antigravity');
     expect(names).not.toContain('Ask-Codex');
     expect(names).not.toContain('Ask-OpenCode');
   });
 
   it('registers opencode tools when opencode available', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
-      gemini: false, codex: false, claude: false, opencode: true,
+      antigravity: false, gemini: false, codex: false, claude: false, opencode: true,
     });
 
     await initTools();
@@ -84,18 +90,20 @@ describe('initTools', () => {
     expect(names).toContain('Ask-OpenCode');
     expect(names).toContain('OpenCode-Help');
     expect(names).not.toContain('Ask-Gemini');
+    expect(names).not.toContain('Ask-Antigravity');
     expect(names).not.toContain('Ask-Codex');
     expect(names).not.toContain('Ask-Claude');
   });
 
   it('registers tools for multiple available CLIs', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
-      gemini: true, codex: true, claude: false, opencode: false,
+      antigravity: true, gemini: true, codex: true, claude: false, opencode: false,
     });
 
     await initTools();
 
     const names = toolRegistry.map(t => t.name);
+    expect(names).toContain('Ask-Antigravity');
     expect(names).toContain('Ask-Gemini');
     expect(names).toContain('Ask-Codex');
     expect(names).not.toContain('Ask-Claude');
@@ -104,7 +112,7 @@ describe('initTools', () => {
 
   it('registers no tools when no CLIs available', async () => {
     vi.mocked(detectAvailableClis).mockResolvedValue({
-      gemini: false, codex: false, claude: false, opencode: false,
+      antigravity: false, gemini: false, codex: false, claude: false, opencode: false,
     });
 
     await initTools();
@@ -112,7 +120,7 @@ describe('initTools', () => {
   });
 
   it('returns availability object', async () => {
-    const expected = { gemini: true, codex: false, claude: true, opencode: false };
+    const expected = { antigravity: true, gemini: true, codex: false, claude: true, opencode: false };
     vi.mocked(detectAvailableClis).mockResolvedValue(expected);
 
     const result = await initTools();

@@ -19,7 +19,7 @@ export interface UnifiedTool {
   };
   
   execute: (args: ToolArguments, context?: ToolExecutionContext) => Promise<string>;
-  category?: 'gemini' | 'codex' | 'claude' | 'opencode' | 'utility';
+  category?: 'antigravity' | 'gemini' | 'codex' | 'claude' | 'opencode' | 'utility';
   execution?: Tool['execution'];
   timeoutClass?: ToolTimeoutClass;
 }
@@ -44,7 +44,7 @@ export function getToolDefinitions(subset?: UnifiedTool[]): Tool[] { // get Tool
     let annotations: Tool['annotations'] | undefined;
     if (tool.name.startsWith('Ask-')) {
       annotations = { openWorldHint: true, readOnlyHint: false, destructiveHint: false };
-    } else if (tool.name.startsWith('List-') || tool.name.endsWith('-Help') || tool.name === 'Fetch-Chunk' || tool.name === 'Claude-Gemini-Codex') {
+    } else if (tool.name.startsWith('List-') || tool.name.endsWith('-Help') || tool.name === 'Fetch-Chunk' || tool.name === 'Fetch-Antigravity-Chunk' || tool.name === 'Claude-Gemini-Codex') {
       annotations = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
     }
 

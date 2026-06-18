@@ -7,7 +7,7 @@ import { TIER_CONFIG, CLI_NOTES } from '../src/tierConfig.js';
 // ===========================================================================
 
 describe('getCatalog', () => {
-  const clis = ['gemini', 'codex', 'claude'] as const;
+  const clis = ['codex', 'claude'] as const;
 
   it.each(clis)('should return a catalog with cli, tiers, and note for "%s"', (cli) => {
     const catalog = getCatalog(cli);
@@ -62,7 +62,7 @@ describe('getCatalog', () => {
 // ===========================================================================
 
 describe('formatCatalog', () => {
-  const clis = ['gemini', 'codex', 'claude'] as const;
+  const clis = ['codex', 'claude'] as const;
 
   it.each(clis)('should include all model IDs from the catalog for "%s"', (cli) => {
     const catalog = getCatalog(cli);
@@ -98,7 +98,7 @@ describe('formatCatalog', () => {
 // ===========================================================================
 
 describe('tierConfig', () => {
-  const clis = ['claude', 'gemini', 'codex'] as const;
+  const clis = ['claude', 'codex'] as const;
   const tiers = ['fast', 'balanced', 'powerful'] as const;
 
   it.each(clis)('should have config for all three tiers for "%s"', (cli) => {

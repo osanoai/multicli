@@ -7,9 +7,9 @@ import {
 } from '../constants.js';
 
 const askGeminiArgsSchema = z.object({
-  prompt: z.string().min(1).describe("The question or task for Gemini. REQUIRED — MUST be a non-empty string. Gemini has filesystem access — use @ syntax to reference files (e.g., '@src/index.ts review this'). Do NOT pre-read or inline file contents — just describe the task and reference files with @."),
-  model: z.string().min(1).describe("REQUIRED — you MUST first call List-Gemini-Models, review the available model families and their strengths, then select the best model for your task's scope and complexity. It's the law. Empty strings will be rejected."),
-  sandbox: z.boolean().default(false).describe("Optional. Do NOT set unless explicitly needed. Run in sandbox mode (-s flag) for safely testing code changes in an isolated environment. Defaults to false."),
+  prompt: z.string().min(1).describe("The question or task for Antigravity through the deprecated Gemini alias. REQUIRED — MUST be a non-empty string. Antigravity has filesystem access via @ syntax — use @ syntax to reference files (e.g., '@src/index.ts review this'). Do NOT pre-read or inline file contents — just describe the task and reference files with @."),
+  model: z.string().min(1).describe("REQUIRED — you MUST first call List-Gemini-Models or List-Antigravity-Models, review the available Antigravity model names and tiers, then pass the exact returned model name. Empty strings will be rejected."),
+  sandbox: z.boolean().default(false).describe("Optional. Do NOT set unless explicitly needed. Run in Antigravity sandbox mode (--sandbox flag) for safely testing code changes in an isolated environment. Defaults to false."),
   changeMode: z.boolean().default(false).describe("Optional. Do NOT set unless explicitly needed. Return structured edit suggestions instead of plain text. Defaults to false."),
   chunkIndex: z.union([z.number(), z.string()]).optional().describe("Internal — do NOT set unless you received a chunked changeMode response. Which chunk to return (1-based)."),
   chunkCacheKey: z.string().optional().describe("Internal — do NOT set unless you received a chunked changeMode response. Cache key from a prior response for fetching subsequent chunks."),
@@ -17,10 +17,10 @@ const askGeminiArgsSchema = z.object({
 
 export const askGeminiTool: UnifiedTool = {
   name: "Ask-Gemini",
-  description: "Ask Google Gemini a question or give it a task. Gemini has filesystem access via @ syntax — do NOT pre-gather context or inline file contents into the prompt. Just describe what you need and use @file references. You MUST call List-Gemini-Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason. This tool is long-running (1-15 min); delegate this call to a sub-agent or background task.",
+  description: "Deprecated compatibility alias for Ask-Antigravity. Executes Google Antigravity via `agy`, not the legacy `gemini` binary. Use Ask-Antigravity for new workflows.",
   zodSchema: askGeminiArgsSchema,
   prompt: {
-    description: "Execute 'gemini <prompt>' to get Gemini AI's response. Supports enhanced change mode for structured edit suggestions.",
+    description: "Deprecated alias: execute Antigravity via `agy --print <prompt>`. Supports enhanced change mode for structured edit suggestions.",
   },
   category: 'gemini',
   execution: { taskSupport: 'optional' },
@@ -53,6 +53,6 @@ export const askGeminiTool: UnifiedTool = {
         prompt as string
       );
     }
-    return `${STATUS_MESSAGES.GEMINI_RESPONSE}\n${result}`; // changeMode false
+    return `DEPRECATION: Ask-Gemini is a compatibility alias. This request was executed by Antigravity via \`agy\`. Use Ask-Antigravity for new workflows.\n\n${STATUS_MESSAGES.ANTIGRAVITY_RESPONSE}\n${result}`; // changeMode false
   }
 };

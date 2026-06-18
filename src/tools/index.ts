@@ -1,11 +1,12 @@
 // Tool Registry Index - Registers tools based on CLI availability
 import { toolRegistry } from './registry.js';
+import { askAntigravityTool } from './ask-antigravity.tool.js';
 import { askGeminiTool } from './ask-gemini.tool.js';
 import {
-  geminiHelpTool, codexHelpTool, claudeHelpTool, opencodeHelpTool,
-  geminiListModelsTool, codexListModelsTool, claudeListModelsTool, opencodeListModelsTool,
+  antigravityHelpTool, geminiHelpTool, codexHelpTool, claudeHelpTool, opencodeHelpTool,
+  antigravityListModelsTool, geminiListModelsTool, codexListModelsTool, claudeListModelsTool, opencodeListModelsTool,
 } from './simple-tools.js';
-import { fetchChunkTool } from './fetch-chunk.tool.js';
+import { fetchAntigravityChunkTool, fetchChunkTool } from './fetch-chunk.tool.js';
 import { askCodexTool } from './ask-codex.tool.js';
 import { askClaudeTool } from './ask-claude.tool.js';
 import { askOpencodeTool } from './ask-opencode.tool.js';
@@ -26,12 +27,21 @@ export async function initTools(
     config?.logger,
   );
 
+  if (availability.antigravity) {
+    toolRegistry.push(
+      antigravityListModelsTool, // List-Antigravity-Models
+      askAntigravityTool,        // Ask-Antigravity
+      fetchAntigravityChunkTool, // Fetch-Antigravity-Chunk
+      antigravityHelpTool,       // Antigravity-Help
+    );
+  }
+
   if (availability.gemini) {
     toolRegistry.push(
-      geminiListModelsTool,   // List-Gemini-Models
-      askGeminiTool,          // Ask-Gemini
-      fetchChunkTool,         // Fetch-Chunk
-      geminiHelpTool,         // Gemini-Help
+      geminiListModelsTool,      // List-Gemini-Models
+      askGeminiTool,             // Ask-Gemini
+      fetchChunkTool,            // Fetch-Chunk
+      geminiHelpTool,            // Gemini-Help
     );
   }
 

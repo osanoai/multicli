@@ -41,6 +41,7 @@ const TEST_CONFIG: MultiCliConfig = {
 
 async function createConnectedPair(options?: CreateServerAppOptions) {
   vi.mocked(detectAvailableClis).mockResolvedValue({
+    antigravity: false,
     gemini: false,
     codex: false,
     claude: true,

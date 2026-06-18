@@ -95,6 +95,7 @@ describe.skipIf(!canBindLoopback)('httpServer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(detectAvailableClis).mockResolvedValue({
+      antigravity: false,
       gemini: false,
       codex: false,
       claude: true,
