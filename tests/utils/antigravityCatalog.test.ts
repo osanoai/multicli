@@ -102,4 +102,18 @@ Available models:
     expect(result).toContain('DEPRECATION: List-Gemini-Models is a compatibility alias');
     expect(result).toContain('gemini-3.1-pro-preview');
   });
+
+  it('keeps latest discovery error details for Gemini alias when cached output exists', async () => {
+    vi.mocked(executeCommand)
+      .mockResolvedValueOnce('gemini-3.1-pro-preview')
+      .mockRejectedValueOnce(new Error('auth expired'));
+
+    await getAntigravityClassifiedCatalog();
+    const result = await getAntigravityClassifiedCatalog(undefined, true);
+
+    expect(result).toContain('DEPRECATION: List-Gemini-Models is a compatibility alias');
+    expect(result).toContain('last successful `agy models` result');
+    expect(result).toContain('gemini-3.1-pro-preview');
+    expect(result).toContain('Latest discovery error: auth expired');
+  });
 });

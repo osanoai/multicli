@@ -31,6 +31,8 @@ describe('formatChangeModeResponse', () => {
     const result = formatChangeModeResponse(edits);
 
     expect(result).toContain('CHANGEMODE OUTPUT');
+    expect(result).toContain('Antigravity has analyzed');
+    expect(result).not.toContain('Gemini has analyzed');
     expect(result).toContain('src/app.ts');
     expect(result).toContain('const x = 1;');
     expect(result).toContain('const x = 2;');
@@ -41,6 +43,7 @@ describe('formatChangeModeResponse', () => {
     const result = formatChangeModeResponse(edits, { current: 2, total: 5 });
 
     expect(result).toContain('Chunk 2 of 5');
+    expect(result).toContain('Antigravity has analyzed your codebase');
     expect(result).toContain('across 5 chunks');
   });
 

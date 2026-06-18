@@ -163,9 +163,6 @@ export async function getAntigravityClassifiedCatalog(
     return formatAntigravityCatalog(raw, deprecatedAlias);
   } catch (error) {
     const failure = formatModelDiscoveryFailure(error, cachedModelsOutput);
-    if (deprecatedAlias && cachedModelsOutput) {
-      return formatAntigravityCatalog(cachedModelsOutput, true);
-    }
     if (deprecatedAlias) {
       return `DEPRECATION: List-Gemini-Models is a compatibility alias. Antigravity via \`agy\` is the Google backend. Use List-Antigravity-Models and Ask-Antigravity for new workflows.\n\n${failure}`;
     }

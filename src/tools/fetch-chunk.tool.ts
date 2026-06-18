@@ -21,8 +21,13 @@ function createFetchChunkTool(name: string, category: 'antigravity' | 'gemini', 
     description: deprecated ? 'Deprecated alias: fetch the next Antigravity response chunk' : 'Fetch the next chunk of an Antigravity response',
     arguments: [
       {
-        name: 'prompt',
-        description: 'fetch-chunk cacheKey=<key> chunkIndex=<number>',
+        name: 'cacheKey',
+        description: 'The cache key provided in the initial changeMode response',
+        required: true
+      },
+      {
+        name: 'chunkIndex',
+        description: 'Which chunk to retrieve (1-based index)',
         required: true
       }
     ]
