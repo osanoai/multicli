@@ -7,7 +7,7 @@ const NO_CLI_MESSAGE = `IMPORTANT: No usable AI CLIs were detected by Multi-CLI.
 
 Multi-CLI requires at least one of the following CLI tools to be installed and available on your system PATH:
 
-  1. gemini  - Google Gemini CLI (https://github.com/google-gemini/gemini-cli)
+  1. agy     - Google Antigravity CLI (Gemini tool names are deprecated aliases)
   2. codex   - OpenAI Codex CLI (https://github.com/openai/codex)
   3. claude  - Anthropic Claude Code CLI (https://claude.ai/cli)
 
@@ -16,7 +16,7 @@ Please inform the user that none of the supported CLIs were detected and at leas
 Note: If only your own CLI is installed, it is hidden because calling yourself is not supported. Install a different CLI to enable cross-model collaboration.
 
 To verify a CLI is available, run one of these commands in a terminal:
-  which gemini
+  which agy
   which codex
   which claude
 

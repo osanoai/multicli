@@ -25,21 +25,13 @@ describe('heuristicTier', () => {
     });
 
     it('classifies lite as fast', () => {
-      expect(heuristicTier('gemini-2.5-flash-lite', 'gemini')).toBe('fast');
-    });
-
-    it('classifies flash (without preview) as fast for gemini', () => {
-      expect(heuristicTier('gemini-2.5-flash', 'gemini')).toBe('fast');
+      expect(heuristicTier('model-lite', 'test')).toBe('fast');
     });
   });
 
   describe('balanced tier', () => {
     it('classifies sonnet as balanced for claude', () => {
       expect(heuristicTier('claude-sonnet-4-6', 'claude')).toBe('balanced');
-    });
-
-    it('classifies flash-preview as balanced for gemini', () => {
-      expect(heuristicTier('gemini-3-flash-preview', 'gemini')).toBe('balanced');
     });
 
     it('classifies codex (no mini/max suffix) as balanced', () => {
@@ -57,8 +49,7 @@ describe('heuristicTier', () => {
     });
 
     it('classifies pro as powerful', () => {
-      expect(heuristicTier('gemini-2.5-pro', 'gemini')).toBe('powerful');
-      expect(heuristicTier('gemini-3.1-pro-preview', 'gemini')).toBe('powerful');
+      expect(heuristicTier('model-pro', 'test')).toBe('powerful');
     });
 
     it('classifies max as powerful', () => {
@@ -276,11 +267,6 @@ describe('pickEnrichmentModel', () => {
   it('picks haiku for claude', () => {
     const ids = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
     expect(pickEnrichmentModel(ids, /haiku/i)).toBe('claude-haiku-4-5-20251001');
-  });
-
-  it('picks flash (non-preview) for gemini', () => {
-    const ids = ['gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
-    expect(pickEnrichmentModel(ids, /flash(?!.*preview)/i)).toBe('gemini-2.5-flash');
   });
 
   it('picks mini for codex', () => {

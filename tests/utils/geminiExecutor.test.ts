@@ -24,55 +24,71 @@ vi.mock('../../src/utils/chunkCache.js', () => ({
 }));
 
 import { executeGeminiCLI } from '../../src/utils/geminiExecutor.js';
+import { formatAgyPrintTimeout } from '../../src/utils/antigravityExecutor.js';
 import { executeCommand } from '../../src/utils/commandExecutor.js';
 
-describe('geminiExecutor', () => {
+describe('geminiExecutor compatibility alias', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('builds correct base args with model and prompt', async () => {
-    await executeGeminiCLI('explain this code', 'gemini-2.5-pro');
+    await executeGeminiCLI('explain this code', 'gemini-3.1-pro-preview');
 
     expect(executeCommand).toHaveBeenCalledWith(
-      'gemini',
-      ['-m', 'gemini-2.5-pro', 'explain this code'],
+      'agy',
+      ['--model', 'gemini-3.1-pro-preview', '--print-timeout', '900s', '--print', 'explain this code'],
       undefined
     );
   });
 
   it('passes multi-word prompts without executor-level quoting', async () => {
-    await executeGeminiCLI('Respond with a brief greeting confirming connectivity', 'gemini-2.5-pro');
+    await executeGeminiCLI('Respond with a brief greeting confirming connectivity', 'gemini-3.1-pro-preview');
 
     const args = vi.mocked(executeCommand).mock.calls[0][1];
-    // Prompt should be a bare string — quoting is handled by sanitizeArgForCmd in executeCommand
-    expect(args[2]).toBe('Respond with a brief greeting confirming connectivity');
+    expect(args.at(-1)).toBe('Respond with a brief greeting confirming connectivity');
   });
 
-  it('passes @ prompts without executor-level quoting', async () => {
-    await executeGeminiCLI('@src/index.ts explain this file', 'gemini-2.5-pro');
+  it('passes multiline and @ prompts without executor-level quoting', async () => {
+    await executeGeminiCLI('@src/index.ts explain this file\nthen summarize it', 'gemini-3.1-pro-preview');
 
     const args = vi.mocked(executeCommand).mock.calls[0][1];
-    // @ prompts must NOT be pre-wrapped in quotes — sanitizeArgForCmd handles quoting centrally
-    expect(args[2]).toBe('@src/index.ts explain this file');
-    expect(args[2]).not.toMatch(/^"/);
+    expect(args.at(-1)).toBe('@src/index.ts explain this file\nthen summarize it');
+    expect(args.at(-1)).not.toMatch(/^"/);
   });
 
   it('adds sandbox flag when enabled', async () => {
-    await executeGeminiCLI('task', 'gemini-2.5-pro', true);
+    await executeGeminiCLI('task', 'gemini-3.1-pro-preview', true);
 
     const args = vi.mocked(executeCommand).mock.calls[0][1];
-    expect(args).toContain('-s');
+    expect(args).toContain('--sandbox');
+  });
+
+  it('converts timeoutMs to agy print timeout seconds', async () => {
+    await executeGeminiCLI('task', 'gemini-3.1-pro-preview', false, false, { timeoutMs: 65_001 });
+
+    expect(vi.mocked(executeCommand).mock.calls[0][1]).toEqual([
+      '--model',
+      'gemini-3.1-pro-preview',
+      '--print-timeout',
+      '66s',
+      '--print',
+      'task',
+    ]);
   });
 
   it('passes onProgress callback through', async () => {
     const onProgress = vi.fn();
-    await executeGeminiCLI('task', 'gemini-2.5-pro', false, false, { onProgress });
+    await executeGeminiCLI('task', 'gemini-3.1-pro-preview', false, false, { onProgress });
 
     expect(executeCommand).toHaveBeenCalledWith(
-      'gemini',
+      'agy',
       expect.any(Array),
       { onProgress }
     );
+  });
+
+  it('formats agy timeout with default fallback', () => {
+    expect(formatAgyPrintTimeout()).toBe('900s');
   });
 });

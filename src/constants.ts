@@ -2,8 +2,8 @@
 
 // Error messages
 export const ERROR_MESSAGES = {
-  QUOTA_EXCEEDED: "Quota exceeded for Gemini model requests",
-  QUOTA_EXCEEDED_SHORT: "⚠️ Gemini daily quota exceeded. Please try again later.",
+  QUOTA_EXCEEDED: "Quota exceeded for Antigravity model requests",
+  QUOTA_EXCEEDED_SHORT: "⚠️ Antigravity daily quota exceeded. Please try again later.",
   TOOL_NOT_FOUND: "not found in registry",
   NO_PROMPT_PROVIDED: "Please provide a prompt for analysis. Use @ syntax to include files (e.g., '@largefile.js explain what this does') or ask general questions",
 } as const;
@@ -11,7 +11,7 @@ export const ERROR_MESSAGES = {
 // Status messages
 export const STATUS_MESSAGES = {
   SANDBOX_EXECUTING: "🔒 Executing CLI command in sandbox mode...",
-  GEMINI_RESPONSE: "Gemini response:",
+  ANTIGRAVITY_RESPONSE: "Antigravity response:",
   CODEX_RESPONSE: "Codex response:",
   CLAUDE_RESPONSE: "Claude response:",
   OPENCODE_RESPONSE: "OpenCode response:",
@@ -52,18 +52,22 @@ export const PROTOCOL = {
 export const CLI = {
   // Command names
   COMMANDS: {
-    GEMINI: "gemini",
+    ANTIGRAVITY: "agy",
     CODEX: "codex",
     CLAUDE: "claude",
     OPENCODE: "opencode",
     ECHO: "echo",
   },
-  // Gemini command flags
-  FLAGS: {
-    MODEL: "-m",
-    SANDBOX: "-s",
-    PROMPT: "-p",
-    HELP: "-help",
+  // Antigravity CLI flags
+  ANTIGRAVITY_FLAGS: {
+    MODEL: "--model",
+    PRINT_TIMEOUT: "--print-timeout",
+    SANDBOX: "--sandbox",
+    PRINT: "--print",
+    HELP: "--help",
+  },
+  ANTIGRAVITY_SUBCOMMANDS: {
+    MODELS: "models",
   },
   // Codex subcommands
   SUBCOMMANDS: {

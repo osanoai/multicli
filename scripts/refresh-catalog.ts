@@ -13,7 +13,7 @@
  *   npx tsx scripts/refresh-catalog.ts
  *
  * Environment variables (optional — only needed if the CLI requires them):
- *   ANTHROPIC_API_KEY, GEMINI_API_KEY / GOOGLE_API_KEY, OPENAI_API_KEY
+ *   ANTHROPIC_API_KEY, OPENAI_API_KEY
  */
 
 import { execSync, execFileSync } from 'node:child_process';
@@ -71,14 +71,6 @@ const CLI_CONFIGS: CLIConfig[] = [
     fastModelPattern: /haiku/i,
     buildEnrichmentCommand: (model, prompt) =>
       `claude --print --output-format text --model ${model} ${shellQuote(prompt)}`,
-  },
-  {
-    name: 'gemini',
-    expectedPrefix: 'gemini-',
-    extractScript: 'scripts/extract-gemini.sh',
-    fastModelPattern: /flash(?!.*preview)/i,
-    buildEnrichmentCommand: (model, prompt) =>
-      `gemini -m ${model} -p ${shellQuote(prompt)}`,
   },
   {
     name: 'codex',
@@ -341,7 +333,7 @@ export function heuristicTier(
   cliName: string,
 ): 'fast' | 'balanced' | 'powerful' {
   // Use dash-delimited segments to avoid substring false positives
-  // (e.g. "gemini" contains "mini", "preview" does NOT contain "pro")
+  // (e.g. "preview" does NOT contain "pro")
   const lower = modelId.toLowerCase();
   const segments = new Set(lower.split('-'));
 
@@ -352,11 +344,6 @@ export function heuristicTier(
   if (['opus', 'pro', 'max', 'ultra'].some((p) => segments.has(p))) return 'powerful';
 
   // CLI-specific patterns
-  if (cliName === 'gemini') {
-    if (segments.has('flash') && !segments.has('preview')) return 'fast';
-    if (segments.has('flash') && segments.has('preview')) return 'balanced';
-  }
-
   if (cliName === 'claude') {
     if (segments.has('sonnet')) return 'balanced';
   }

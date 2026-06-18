@@ -5,27 +5,32 @@ import { UnifiedTool } from './tools/registry.js';
  * (no point asking yourself for a second opinion).
  */
 
-const CLIENT_EXCLUSIONS: Record<string, UnifiedTool['category']> = {
-  'claude-code':            'claude',
-  'codex-mcp-client':       'codex',
-  'gemini-cli-mcp-client':  'gemini',
-  'opencode':               'opencode',
+const CLIENT_EXCLUSIONS: Record<string, NonNullable<UnifiedTool['category']>[]> = {
+  'claude-code':            ['claude'],
+  'codex-mcp-client':       ['codex'],
+  'gemini-cli-mcp-client':  ['antigravity', 'gemini'],
+  'antigravity-cli-mcp-client': ['antigravity', 'gemini'],
+  'opencode':               ['opencode'],
 };
 
 export function getExcludedCategory(clientName: string | undefined): UnifiedTool['category'] | undefined {
-  if (!clientName) return undefined;
-  return CLIENT_EXCLUSIONS[clientName];
+  return getExcludedCategories(clientName)[0];
+}
+
+export function getExcludedCategories(clientName: string | undefined): NonNullable<UnifiedTool['category']>[] {
+  if (!clientName) return [];
+  return CLIENT_EXCLUSIONS[clientName] ?? [];
 }
 
 export function filterToolsForClient(tools: UnifiedTool[], clientName: string | undefined): UnifiedTool[] {
-  const excluded = getExcludedCategory(clientName);
-  if (!excluded) return tools;
+  const excluded = new Set(getExcludedCategories(clientName));
+  if (excluded.size === 0) return tools;
 
-  return tools.filter(t => t.category !== excluded);
+  return tools.filter(t => !t.category || !excluded.has(t.category));
 }
 
 export function isToolBlockedForClient(tool: UnifiedTool | undefined, clientName: string | undefined): boolean {
   if (!tool) return false;
-  const excluded = getExcludedCategory(clientName);
-  return excluded !== undefined && tool.category === excluded;
+  const excluded = new Set(getExcludedCategories(clientName));
+  return tool.category !== undefined && excluded.has(tool.category);
 }

@@ -77,6 +77,7 @@ export async function commandExists(
 }
 
 export interface CliAvailability {
+  antigravity: boolean;
   gemini: boolean;
   codex: boolean;
   claude: boolean;
@@ -84,8 +85,8 @@ export interface CliAvailability {
 }
 
 /**
- * Detect which of the four supported CLIs are available on the system.
- * Runs all four checks in parallel for speed.
+ * Detect which supported CLIs are available on the system.
+ * Runs all checks in parallel for speed.
  */
 export async function detectAvailableClis(
   timeoutMs?: number,
@@ -95,18 +96,19 @@ export async function detectAvailableClis(
     logger?.info('cli_detection_skipped', {
       reason: 'QA_NO_CLIS=true',
     });
-    return { gemini: false, codex: false, claude: false, opencode: false };
+    return { antigravity: false, gemini: false, codex: false, claude: false, opencode: false };
   }
 
   logger?.info('cli_detection_started', { timeoutMs });
-  const [gemini, codex, claude, opencode] = await Promise.all([
-    commandExists(CLI.COMMANDS.GEMINI, timeoutMs, logger),
+  const [antigravity, codex, claude, opencode] = await Promise.all([
+    commandExists(CLI.COMMANDS.ANTIGRAVITY, timeoutMs, logger),
     commandExists(CLI.COMMANDS.CODEX, timeoutMs, logger),
     commandExists(CLI.COMMANDS.CLAUDE, timeoutMs, logger),
     commandExists(CLI.COMMANDS.OPENCODE, timeoutMs, logger),
   ]);
 
-  const availability: CliAvailability = { gemini, codex, claude, opencode };
+  const gemini = antigravity;
+  const availability: CliAvailability = { antigravity, gemini, codex, claude, opencode };
   logger?.info('cli_detection_finished', { availability });
 
   return availability;

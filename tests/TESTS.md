@@ -26,15 +26,16 @@ Call `tools/list` via MCP. Record every tool name returned.
 
 ### Step 2 — Identify backends by prefix
 
-Group tools by their name prefix. The three possible prefixes are:
+Group tools by their name prefix. The primary backend prefixes are:
 
 | Prefix | Backend |
 |--------|---------|
-| `gemini-` | Gemini CLI |
+| `antigravity-` | Antigravity CLI |
 | `codex-` | Codex CLI |
 | `claude-` | Claude CLI |
+| `opencode-` | OpenCode CLI |
 
-You should see tools from exactly **two** of these three prefixes. The missing prefix is your own backend (Multi-CLI hides your own tools from you).
+You should see tools from the backends installed locally, excluding your own backend (Multi-CLI hides your own tools from you). Deprecated `Gemini` tool names may also appear when Antigravity is visible; they are compatibility aliases backed by `agy`.
 
 ### Step 3 — Assign variables
 
@@ -52,7 +53,7 @@ For each visible backend, you should see three tools following this naming conve
 | `{prefix}list-models` | List available models |
 | `{prefix}help` | Show CLI help text |
 
-Gemini also exposes `Fetch-Chunk` (4 tools total). Record which tools you see.
+Antigravity also exposes `Fetch-Antigravity-Chunk` (4 primary tools total). Deprecated Gemini aliases expose `Fetch-Antigravity-Chunk`. Record which tools you see.
 
 ### Step 4 — Pick models
 
@@ -78,7 +79,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 **Steps**: Count tools grouped by each visible prefix.
 
-**Expected**: Each visible backend has at least 3 tools (`ask`, `list-models`, `help`). If Gemini is visible, it has 4 (adds `Fetch-Chunk`).
+**Expected**: Each visible backend has at least 3 tools (`ask`, `list-models`, `help`). If Antigravity is visible, it has 4 (adds `Fetch-Antigravity-Chunk`) and may also expose deprecated Gemini aliases.
 
 **Pass if**: Counts match. **Fail if**: Any visible backend has fewer tools than expected.
 
@@ -307,34 +308,32 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 **Pass if**: Non-empty response. **Fail if**: Validation error on systemPrompt.
 **Skip if**: Claude is not a visible backend.
 
-### Test 5.8 — Gemini sandbox flag (if Gemini visible)
+### Test 5.8 — Antigravity sandbox flag (if Antigravity visible)
 
-**Steps**: If Gemini is a visible backend, call `Ask-Gemini` with `{ "prompt": "Reply with exactly: SANDBOX_GEM", "model": "{Gemini Model}", "sandbox": true }`.
+**Steps**: If Antigravity is a visible backend, call `Ask-Antigravity` with `{ "prompt": "Reply with exactly: SANDBOX_AGY", "model": "{Antigravity Model}", "sandbox": true }`.
 
-**Expected**: Response succeeds. The `sandbox` parameter is a boolean for Gemini (not an enum).
+**Expected**: Response succeeds. The `sandbox` parameter is a boolean for Antigravity (not an enum).
 
 **Pass if**: Valid response returned. **Fail if**: Validation error or crash.
-**Skip if**: Gemini is not a visible backend.
+**Skip if**: Antigravity is not a visible backend.
 
-### Test 5.9 — Gemini sandbox wrong type (if Gemini visible)
+### Test 5.9 — Antigravity sandbox wrong type (if Antigravity visible)
 
-**Steps**: Call `Ask-Gemini` with `{ "prompt": "hello", "model": "{Gemini Model}", "sandbox": "true" }`.
+**Steps**: Call `Ask-Antigravity` with `{ "prompt": "hello", "model": "{Antigravity Model}", "sandbox": "true" }`.
 
-**Expected**: Validation error — Gemini's `sandbox` field expects a boolean, not a string.
+**Expected**: Validation error — Antigravity's `sandbox` field expects a boolean, not a string.
 
 **Pass if**: Clean validation error referencing type mismatch. **Fail if**: Request proceeds.
-**Skip if**: Gemini is not a visible backend.
+**Skip if**: Antigravity is not a visible backend.
 
----
+## Suite 6: ChangeMode (Antigravity-Specific)
 
-## Suite 6: ChangeMode (Gemini-Specific)
-
-> **Requires CLI**: Gemini CLI must be installed.
-> **Skip if**: Gemini is not a visible backend or Gemini CLI is absent.
+> **Requires CLI**: Antigravity CLI (`agy`) must be installed and signed in.
+> **Skip if**: Antigravity is not a visible backend or `agy` is absent.
 
 ### Test 6.1 — ChangeMode flag accepted
 
-**Steps**: Call `Ask-Gemini` with `{ "prompt": "Suggest a one-line comment addition to a Python hello world script", "model": "{Gemini Model}", "changeMode": true }`.
+**Steps**: Call `Ask-Antigravity` with `{ "prompt": "Suggest a one-line comment addition to a Python hello world script", "model": "{Antigravity Model}", "changeMode": true }`.
 
 **Expected**: Response succeeds. Output should contain structured edit information or a changeMode-formatted response. If the response is large enough to be chunked, a `cacheKey` and `chunkIndex` will appear in the response text.
 
@@ -342,7 +341,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 6.2 — ChangeMode with chunkIndex
 
-**Steps**: Call `Ask-Gemini` with `{ "prompt": "Write a 500-line Python program with detailed comments on every line", "model": "{Gemini Model}", "changeMode": true, "chunkIndex": 1 }`.
+**Steps**: Call `Ask-Antigravity` with `{ "prompt": "Write a 500-line Python program with detailed comments on every line", "model": "{Antigravity Model}", "changeMode": true, "chunkIndex": 1 }`.
 
 **Expected**: Response succeeds. The `chunkIndex` parameter (1-based) is accepted alongside `changeMode`.
 
@@ -350,7 +349,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 6.3 — ChangeMode defaults to false
 
-**Steps**: Call `Ask-Gemini` with `{ "prompt": "Say hello", "model": "{Gemini Model}" }` (no `changeMode` field).
+**Steps**: Call `Ask-Antigravity` with `{ "prompt": "Say hello", "model": "{Antigravity Model}" }` (no `changeMode` field).
 
 **Expected**: Response is a standard text response, not changeMode-formatted.
 
@@ -358,14 +357,14 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ---
 
-## Suite 7: Fetch-Chunk (Gemini-Specific)
+## Suite 7: Fetch-Antigravity-Chunk (Antigravity-Specific)
 
 > **Requires**: Suite 6 must produce a cached chunk (a `cacheKey`). If Suite 6 did not produce a cacheKey, skip this suite.
-> **Skip if**: Gemini is not a visible backend.
+> **Skip if**: Antigravity is not a visible backend.
 
 ### Test 7.1 — Fetch valid chunk
 
-**Steps**: Using the `cacheKey` from Suite 6, call `Fetch-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 1 }`.
+**Steps**: Using the `cacheKey` from Suite 6, call `Fetch-Antigravity-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 1 }`.
 
 **Expected**: Response contains chunk content from the cached response.
 
@@ -373,7 +372,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.2 — Fetch chunk index out of range
 
-**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 9999 }`.
+**Steps**: Call `Fetch-Antigravity-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 9999 }`.
 
 **Expected**: Error or informational message indicating the chunk index is out of range.
 
@@ -381,7 +380,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.3 — Fetch chunk with zero index
 
-**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 0 }`.
+**Steps**: Call `Fetch-Antigravity-Chunk` with `{ "cacheKey": "{cacheKey}", "chunkIndex": 0 }`.
 
 **Expected**: Validation error — `chunkIndex` has a minimum value of 1 (1-based indexing).
 
@@ -389,7 +388,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.4 — Invalid cache key
 
-**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "nonexistent_key_abc123", "chunkIndex": 1 }`.
+**Steps**: Call `Fetch-Antigravity-Chunk` with `{ "cacheKey": "nonexistent_key_abc123", "chunkIndex": 1 }`.
 
 **Expected**: Error message explaining the cache key is invalid, possibly mentioning expiry, wrong key, or MCP restart. The response includes TTL information (10-minute cache).
 
@@ -397,7 +396,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.5 — Missing cacheKey field
 
-**Steps**: Call `Fetch-Chunk` with `{ "chunkIndex": 1 }`.
+**Steps**: Call `Fetch-Antigravity-Chunk` with `{ "chunkIndex": 1 }`.
 
 **Expected**: Validation error — `cacheKey` is a required field.
 
@@ -405,7 +404,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.6 — Missing chunkIndex field
 
-**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "anything" }`.
+**Steps**: Call `Fetch-Antigravity-Chunk` with `{ "cacheKey": "anything" }`.
 
 **Expected**: Validation error — `chunkIndex` is a required field.
 
@@ -413,7 +412,7 @@ You should now have: Backend A, Backend B, Hidden Backend, Model A, Model B, and
 
 ### Test 7.7 — Negative chunkIndex
 
-**Steps**: Call `Fetch-Chunk` with `{ "cacheKey": "anything", "chunkIndex": -1 }`.
+**Steps**: Call `Fetch-Antigravity-Chunk` with `{ "cacheKey": "anything", "chunkIndex": -1 }`.
 
 **Expected**: Validation error — `chunkIndex` must be >= 1.
 
@@ -561,8 +560,8 @@ Run suites in this order to maximize coverage while respecting dependencies:
 
 7. **Suite 3: Help Tools** — basic CLI connectivity check
 8. **Suite 5: Ask — Execution** — end-to-end prompt execution
-9. **Suite 6: ChangeMode** — Gemini-specific (skip if Gemini not visible)
-10. **Suite 7: Fetch-Chunk** — depends on Suite 6 producing a cacheKey
+9. **Suite 6: ChangeMode** — Antigravity-specific (skip if Antigravity not visible)
+10. **Suite 7: Fetch-Antigravity-Chunk** — depends on Suite 6 producing a cacheKey
 
 ### Phase 3 — Edge Cases
 
@@ -583,7 +582,7 @@ After running all applicable suites, record results here:
 | 4. Ask — Validation | 9 | | | |
 | 5. Ask — Execution | 9 | | | |
 | 6. ChangeMode | 3 | | | |
-| 7. Fetch-Chunk | 7 | | | |
+| 7. Fetch-Antigravity-Chunk | 7 | | | |
 | 8. CLI Missing | 2 | | | |
 | 9. Hidden Tools | 2 | | | |
 | 10. Prompts | 4 | | | |

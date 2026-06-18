@@ -3,19 +3,36 @@ import { UnifiedTool } from './registry.js';
 import { executeCommand } from '../utils/commandExecutor.js';
 import { formatCatalog } from '../modelCatalog.js';
 import { getOpencodeClassifiedCatalog } from '../utils/opencodeCatalog.js';
+import { getAntigravityClassifiedCatalog } from '../utils/antigravityCatalog.js';
+import { CLI } from '../constants.js';
 
 const helpArgsSchema = z.object({});
 
 export const geminiHelpTool: UnifiedTool = {
   name: "Gemini-Help",
-  description: "Receive help information from the Gemini CLI",
+  description: "Deprecated compatibility alias for Antigravity-Help. Executes `agy --help`.",
   zodSchema: helpArgsSchema,
   prompt: {
-    description: "Receive help information from the Gemini CLI",
+    description: "Deprecated alias: receive help information from the Antigravity CLI",
   },
   category: 'gemini',
   timeoutClass: 'help',
-  execute: async (_args, context) => executeCommand("gemini", ["-help"], context),
+  execute: async (_args, context) => {
+    const help = await executeCommand(CLI.COMMANDS.ANTIGRAVITY, [CLI.ANTIGRAVITY_FLAGS.HELP], context);
+    return `DEPRECATION: Gemini-Help is a compatibility alias. This help was produced by Antigravity via \`agy --help\`. Use Antigravity-Help for new workflows.\n\n${help}`;
+  },
+};
+
+export const antigravityHelpTool: UnifiedTool = {
+  name: "Antigravity-Help",
+  description: "Receive help information from the Antigravity CLI",
+  zodSchema: helpArgsSchema,
+  prompt: {
+    description: "Receive help information from the Antigravity CLI",
+  },
+  category: 'antigravity',
+  timeoutClass: 'help',
+  execute: async (_args, context) => executeCommand(CLI.COMMANDS.ANTIGRAVITY, [CLI.ANTIGRAVITY_FLAGS.HELP], context),
 };
 
 export const codexHelpTool: UnifiedTool = {
@@ -46,14 +63,27 @@ const noArgsSchema = z.object({});
 
 export const geminiListModelsTool: UnifiedTool = {
   name: "List-Gemini-Models",
-  description: "List available Gemini model families, their strengths, and known model IDs. You MUST call this before Ask-Gemini to choose the right model for your task. It's the law.",
+  description: "Deprecated compatibility alias for List-Antigravity-Models. Lists the full Antigravity model catalog from `agy models`; use the exact returned model name.",
   zodSchema: noArgsSchema,
   prompt: {
-    description: "List available Gemini models with family descriptions",
+    description: "Deprecated alias: list available Antigravity models with tier classifications",
   },
   category: 'gemini',
-  execute: async () => {
-    return formatCatalog('gemini');
+  execute: async (_args, context) => {
+    return getAntigravityClassifiedCatalog(context, true);
+  }
+};
+
+export const antigravityListModelsTool: UnifiedTool = {
+  name: "List-Antigravity-Models",
+  description: "List available Antigravity models from `agy models`, classify them into tiers, and tell callers to pass the exact returned model name to Ask-Antigravity.",
+  zodSchema: noArgsSchema,
+  prompt: {
+    description: "List available Antigravity models with tier classifications",
+  },
+  category: 'antigravity',
+  execute: async (_args, context) => {
+    return getAntigravityClassifiedCatalog(context);
   }
 };
 

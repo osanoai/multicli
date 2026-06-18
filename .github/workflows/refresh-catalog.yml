@@ -29,7 +29,7 @@ jobs:
 
       - name: Install CLIs (no lifecycle scripts to prevent secret exfiltration)
         run: |
-          npm install -g --ignore-scripts @anthropic-ai/claude-code @google/gemini-cli @openai/codex
+          npm install -g --ignore-scripts @anthropic-ai/claude-code @openai/codex
         continue-on-error: true
 
       - name: Login Codex CLI
@@ -40,7 +40,6 @@ jobs:
       - name: Refresh catalog
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npx tsx scripts/refresh-catalog.ts
 

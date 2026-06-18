@@ -7,13 +7,13 @@
 [![Node](https://img.shields.io/node/v/@osanoai/multicli)](https://www.npmjs.com/package/@osanoai/multicli)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**An MCP server that lets Claude, Gemini, Codex, and OpenCode call each other as tools.**
+**An MCP server that lets Claude, Antigravity, Codex, and OpenCode call each other as tools.**
 
 ```
-Claude:   "Hey Gemini, what do you think about this code?"
-Gemini:   "It's mass. Let me ask Codex for a second opinion."
-Codex:    "You're both wrong. Here's the fix."
-OpenCode: "I checked with three providers. They all agree with Codex."
+Claude:      "Hey Antigravity, what do you think about this code?"
+Antigravity: "It's messy. Let me ask Codex for a second opinion."
+Codex:       "You're both wrong. Here's the fix."
+OpenCode:    "I checked with three providers. They all agree with Codex."
 ```
 
 ---
@@ -27,7 +27,7 @@ curl -fsSL https://raw.githubusercontent.com/osanoai/multicli/main/install.sh | 
 Detects which AI CLIs you have installed and configures Multi-CLI for them automatically.
 
 - Claude Code is configured to use a per-user local HTTP service on `127.0.0.1`
-- Gemini CLI, Codex CLI, and OpenCode keep using stdio/local config by default
+- Antigravity CLI, Codex CLI, and OpenCode keep using local config by default
 - The installer may update client config files on your behalf
 
 ---
@@ -36,10 +36,10 @@ Detects which AI CLIs you have installed and configures Multi-CLI for them autom
 
 Multi-CLI sits between your AI clients and bridges them via the [Model Context Protocol](https://modelcontextprotocol.io/). Install it once, and whichever AI you're talking to gains the ability to call the others.
 
-- **Claude** can ask Gemini, Codex, or OpenCode for help
-- **Gemini** can delegate to Claude, Codex, or OpenCode
-- **Codex** can consult Claude, Gemini, or OpenCode
-- **OpenCode** can call Claude, Gemini, or Codex (across 75+ providers)
+- **Claude** can ask Antigravity, Codex, or OpenCode for help
+- **Antigravity** can delegate to Claude, Codex, or OpenCode
+- **Codex** can consult Claude, Antigravity, or OpenCode
+- **OpenCode** can call Claude, Antigravity, or Codex (across 75+ providers)
 - Each client's own tools are hidden (no talking to yourself, that's weird)
 - Auto-detects which CLIs you have installed — only shows what's available
 
@@ -49,7 +49,7 @@ Multi-CLI sits between your AI clients and bridges them via the [Model Context P
 
 This tool was built by the very AIs it connects.
 
-Claude, Gemini, Codex, and OpenCode wrote the code. Claude, Gemini, Codex, and OpenCode maintain it. Every night, a CI job queries the latest stable release of each CLI for its current model list, diffs the results against what's in the repo, and automatically publishes a new version if anything changed. New model releases get picked up within 24 hours. Deprecated models get cleaned out. The repo stays current without anyone touching it.
+Claude, Codex, Gemini, and OpenCode wrote the code. Claude, Codex, Gemini, and OpenCode maintain it. Every night, a CI job queries the latest stable release of the static-catalog CLIs for current model lists, diffs the results against what's in the repo, and automatically publishes a new version if anything changed. Antigravity models are discovered live through `agy models` because that command depends on local sign-in and account access.
 
 The stdio install paths use `@latest`, so those clients pick up new releases automatically. Claude Code's managed HTTP service intentionally runs from a stable installed runtime instead of a transient `npx` cache; rerun the installer or `multicli service refresh --configure-claude` after upgrading.
 
@@ -64,7 +64,7 @@ You need **Node.js >= 20** and at least **one** of these CLIs installed:
 | CLI | Install |
 |-----|---------|
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) | `npm install -g @anthropic-ai/claude-code` |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `npm install -g @google/gemini-cli` |
+| [Antigravity CLI](https://github.com/google-antigravity/antigravity-cli) | Install Antigravity so `agy` is on your PATH |
 | [Codex CLI](https://github.com/openai/codex) | `npm install -g @openai/codex` |
 | [OpenCode](https://opencode.ai) | `curl -fsSL https://opencode.ai/install | bash` |
 
@@ -132,14 +132,15 @@ Restart Claude Desktop completely after saving.
 
 ---
 
-### Gemini CLI
+### Antigravity CLI
 
 ```bash
-gemini mcp add --scope user Multi-CLI npx -y @osanoai/multicli@latest
+mkdir -p ~/.gemini/config
+node -e 'const fs=require("fs"),p=process.env.HOME+"/.gemini/config/mcp_config.json";let c={};if(fs.existsSync(p)){c=JSON.parse(fs.readFileSync(p,"utf8")||"{}")}c.mcpServers={...(c.mcpServers||{}),"Multi-CLI":{command:"npx",args:["-y","@osanoai/multicli@latest"]}};fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n")'
 ```
 
 <details>
-<summary>Manual config (~/.gemini/settings.json)</summary>
+<summary>Manual config (~/.gemini/config/mcp_config.json)</summary>
 
 ```json
 {
@@ -229,10 +230,14 @@ Once connected, your AI client gains access to tools for the *other* CLIs (never
 
 | Tool | Description |
 |------|-------------|
-| `List-Gemini-Models` | List available Gemini models and their strengths |
-| `Ask-Gemini` | Ask-Gemini a question or give it a task |
-| `Fetch-Chunk` | Retrieve chunked responses from Gemini |
-| `Gemini-Help` | Get Gemini CLI help info |
+| `List-Antigravity-Models` | List available Antigravity models from `agy models` |
+| `Ask-Antigravity` | Ask Antigravity a question or give it a task |
+| `Fetch-Antigravity-Chunk` | Retrieve chunked responses from Antigravity changeMode |
+| `Antigravity-Help` | Get Antigravity CLI help info |
+| `List-Gemini-Models` | Deprecated alias for `List-Antigravity-Models` |
+| `Ask-Gemini` | Deprecated alias for `Ask-Antigravity`; executes through `agy` |
+| `Fetch-Chunk` | Deprecated alias for `Fetch-Antigravity-Chunk` |
+| `Gemini-Help` | Deprecated alias for `Antigravity-Help` |
 | `List-Codex-Models` | List available Codex models |
 | `Ask-Codex` | Ask-Codex a question or give it a task |
 | `Codex-Help` | Get Codex CLI help info |
@@ -260,7 +265,7 @@ The `Ask-*` tools still work as normal synchronous MCP tools, but they now also 
 Once installed, just talk naturally to your AI:
 
 ```
-"Ask-Gemini what it thinks about this architecture"
+"Ask-Antigravity what it thinks about this architecture"
 "Have Codex review this function for performance issues"
 "Get Claude's opinion on this error message"
 "Use OpenCode to get a second opinion from Llama"
@@ -270,7 +275,7 @@ Or get a second opinion on anything:
 
 ```
 "I want three perspectives on how to refactor this module —
- ask Gemini and Codex what they'd do differently"
+ ask Antigravity and Codex what they'd do differently"
 ```
 
 ---
@@ -306,7 +311,7 @@ For Claude Code, Multi-CLI can also run as a local background HTTP service:
 **"No usable AI CLIs detected"**
 Make sure at least one other CLI is installed and on your PATH:
 ```bash
-which gemini && which codex && which claude && which opencode
+which agy && which codex && which claude && which opencode
 ```
 
 **No tools showing up?**

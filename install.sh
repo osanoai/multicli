@@ -17,17 +17,18 @@ GLOBAL_INSTALL_READY=false
 
 echo ""
 echo -e "${CYAN}${BOLD}  Multi-CLI MCP Installer${RESET}"
-echo -e "${CYAN}  Bridging Claude, Gemini, Codex, and OpenCode${RESET}"
+echo -e "${CYAN}  Bridging Claude, Antigravity, Codex, and OpenCode${RESET}"
 echo ""
 
 # Detect available CLIs
 CLAUDE_FOUND=false
+ANTIGRAVITY_FOUND=false
 GEMINI_FOUND=false
 CODEX_FOUND=false
 OPENCODE_FOUND=false
 
 command -v claude   &>/dev/null && CLAUDE_FOUND=true
-command -v gemini   &>/dev/null && GEMINI_FOUND=true
+command -v agy      &>/dev/null && ANTIGRAVITY_FOUND=true && GEMINI_FOUND=true
 command -v codex    &>/dev/null && CODEX_FOUND=true
 command -v opencode &>/dev/null && OPENCODE_FOUND=true
 
@@ -63,7 +64,7 @@ install_global_multicli() {
 
 FOUND_COUNT=0
 $CLAUDE_FOUND   && ((FOUND_COUNT++)) || true
-$GEMINI_FOUND   && ((FOUND_COUNT++)) || true
+$ANTIGRAVITY_FOUND && ((FOUND_COUNT++)) || true
 $CODEX_FOUND    && ((FOUND_COUNT++)) || true
 $OPENCODE_FOUND && ((FOUND_COUNT++)) || true
 
@@ -73,7 +74,7 @@ if [ "$FOUND_COUNT" -eq 0 ]; then
   echo ""
   echo "Multi-CLI requires at least one of the following to be installed:"
   echo "  • Claude Code  →  npm install -g @anthropic-ai/claude-code"
-  echo "  • Gemini CLI   →  npm install -g @google/gemini-cli"
+  echo "  • Antigravity  →  install the Antigravity CLI so the agy command is on PATH"
   echo "  • Codex CLI    →  npm install -g @openai/codex"
   echo "  • OpenCode     →  curl -fsSL https://opencode.ai/install | bash"
   echo ""
@@ -81,6 +82,52 @@ if [ "$FOUND_COUNT" -eq 0 ]; then
   echo ""
   exit 1
 fi
+
+install_antigravity_config() {
+  local config_dir="$HOME/.gemini/config"
+  local config_file="$config_dir/mcp_config.json"
+  mkdir -p "$config_dir"
+
+  SERVER_NAME="$SERVER_NAME" PACKAGE="$PACKAGE" CONFIG_FILE="$config_file" node <<'NODE'
+const fs = require('fs');
+const path = require('path');
+
+const configFile = process.env.CONFIG_FILE;
+const serverName = process.env.SERVER_NAME;
+const packageName = process.env.PACKAGE;
+let cfg = {};
+
+if (fs.existsSync(configFile)) {
+  const raw = fs.readFileSync(configFile, 'utf8').trim();
+  if (raw) {
+    try {
+      cfg = JSON.parse(raw);
+    } catch {
+      const backup = `${configFile}.invalid-${new Date().toISOString().replace(/[:.]/g, '-')}.bak`;
+      fs.copyFileSync(configFile, backup);
+      cfg = {};
+      console.error(`Backed up malformed Antigravity MCP config to ${backup}`);
+    }
+  }
+}
+
+if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
+  cfg = {};
+}
+
+cfg.mcpServers = cfg.mcpServers && typeof cfg.mcpServers === 'object' && !Array.isArray(cfg.mcpServers)
+  ? cfg.mcpServers
+  : {};
+cfg.mcpServers[serverName] = {
+  command: 'npx',
+  args: ['-y', packageName],
+};
+
+const tmp = `${configFile}.tmp-${process.pid}`;
+fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2) + '\n');
+fs.renameSync(tmp, configFile);
+NODE
+}
 
 # Install for each detected CLI
 INSTALLED=()
@@ -95,12 +142,12 @@ if $CLAUDE_FOUND; then
   fi
 fi
 
-if $GEMINI_FOUND; then
-  echo -e "  ${CYAN}→ Installing for Gemini CLI...${RESET}"
-  if gemini mcp add --scope user "$SERVER_NAME" npx -y "$PACKAGE" 2>/dev/null; then
-    INSTALLED+=("Gemini CLI")
+if $ANTIGRAVITY_FOUND; then
+  echo -e "  ${CYAN}→ Installing for Antigravity CLI...${RESET}"
+  if install_antigravity_config 2>/dev/null; then
+    INSTALLED+=("Antigravity CLI")
   else
-    FAILED+=("Gemini CLI")
+    FAILED+=("Antigravity CLI")
   fi
 fi
 
@@ -180,7 +227,7 @@ if [ "$FOUND_COUNT" -eq 1 ]; then
   echo ""
   echo "  Install at least one more CLI to unlock cross-model collaboration:"
   $CLAUDE_FOUND   || echo "    • Claude Code  →  npm install -g @anthropic-ai/claude-code"
-  $GEMINI_FOUND   || echo "    • Gemini CLI   →  npm install -g @google/gemini-cli"
+  $ANTIGRAVITY_FOUND || echo "    • Antigravity  →  install the Antigravity CLI so the agy command is on PATH"
   $CODEX_FOUND    || echo "    • Codex CLI    →  npm install -g @openai/codex"
   $OPENCODE_FOUND || echo "    • OpenCode     →  curl -fsSL https://opencode.ai/install | bash"
   echo ""
@@ -193,6 +240,6 @@ else
   done
   echo ""
   echo -e "  Restart your AI client and the cross-model tools will appear automatically."
-  echo -e "  Claude Code now uses the managed local HTTP service; other detected clients keep their stdio/local configuration."
+  echo -e "  Claude Code now uses the managed local HTTP service; Antigravity, Codex, and OpenCode keep their local MCP configuration."
   echo ""
 fi
