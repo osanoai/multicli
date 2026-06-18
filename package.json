@@ -1,6 +1,6 @@
 {
   "name": "@osanoai/multicli",
-  "version": "1.5.40",
+  "version": "1.5.41",
   "description": "MCP server for Multiple CLI coding agent integration (Claude + Antigravity + Codex)",
   "type": "module",
   "main": "dist/index.js",
