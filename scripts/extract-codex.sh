@@ -4,7 +4,12 @@
 # Use a unique temporary directory
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'codex-extract')
 REPO_URL="${CODEX_REPO_URL:-https://github.com/openai/codex}"
-MODELS_FILE="codex-rs/core/models.json"
+# Codex moved the bundled model metadata from core/ to models-manager/.
+# Try the new location first, then fall back to the old one for older refs.
+MODELS_FILES=(
+    "codex-rs/models-manager/models.json"
+    "codex-rs/core/models.json"
+)
 
 # Function to clean up on exit
 cleanup() {
@@ -20,18 +25,26 @@ fi
 
 cd "$TMP_DIR" || { echo "[]"; exit 0; }
 
-# 2. Attempt to checkout the models file from main
-if ! git checkout main -- "$MODELS_FILE" > /dev/null 2>&1; then
-    # Fallback to master if main failed
-    if ! git checkout master -- "$MODELS_FILE" > /dev/null 2>&1; then
-        echo "[]"
-        exit 0
-    fi
+# 2. Attempt to checkout the models file: try each branch (main, master)
+#    against each candidate path, and use the first one that exists.
+MODELS_FILE=""
+for branch in main master; do
+    for candidate in "${MODELS_FILES[@]}"; do
+        if git checkout "$branch" -- "$candidate" > /dev/null 2>&1; then
+            MODELS_FILE="$candidate"
+            break 2
+        fi
+    done
+done
+
+if [ -z "$MODELS_FILE" ]; then
+    echo "[]"
+    exit 0
 fi
 
-# 3. Extract slugs using jq and output as a JSON array to stdout
+# 3. Extract gpt- slugs using jq and output as a JSON array to stdout
 if [ -f "$MODELS_FILE" ]; then
-    RESULT=$(jq -c '[.models[].slug | select(contains("oss") | not)] | unique' "$MODELS_FILE")
+    RESULT=$(jq -c '[.models[].slug | select(startswith("gpt-")) | select(contains("oss") | not)] | unique' "$MODELS_FILE")
 else
     RESULT="[]"
 fi
