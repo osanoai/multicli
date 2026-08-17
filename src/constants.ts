@@ -78,9 +78,22 @@ export const CLI = {
     MODEL: "-m",
     SANDBOX: "-s",
     APPROVAL: "-a",
+    CONFIG: "-c",
     COLOR: "--color",
+    // Removed from `codex exec` in newer CLI versions — kept for older installs.
     FULL_AUTO: "--full-auto",
+    ASK_FOR_APPROVAL: "--ask-for-approval",
+    // Replacement for --full-auto. Mutually exclusive with -s/--sandbox.
+    APPROVE_FOR_ME: "--approve-for-me",
     SKIP_GIT_CHECK: "--skip-git-repo-check",
+    HELP: "--help",
+  },
+  // Config override used when the -a flag is unavailable
+  CODEX_CONFIG_KEYS: {
+    APPROVAL_POLICY: "approval_policy",
+  },
+  CODEX_APPROVAL_POLICIES: {
+    NEVER: "never",
   },
   // Claude Code flags
   CLAUDE_FLAGS: {
