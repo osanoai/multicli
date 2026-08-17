@@ -15,7 +15,7 @@ export const askCodexTool: UnifiedTool = {
   description: "Ask OpenAI Codex a question or give it a task. Codex has full filesystem access and will read files itself — do NOT pre-gather context or inline file contents into the prompt. Just describe what you need. You MUST call List-Codex-Models first to select an appropriate model. Do NOT set optional parameters unless you have a specific reason. This tool is long-running (1-15 min); delegate this call to a sub-agent or background task.",
   zodSchema: askCodexArgsSchema,
   prompt: {
-    description: "Execute 'codex exec <prompt> --full-auto' to get Codex's response.",
+    description: "Execute 'codex exec <prompt>' unattended to get Codex's response.",
   },
   category: 'codex',
   execution: { taskSupport: 'optional' },
